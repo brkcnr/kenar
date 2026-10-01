@@ -6,7 +6,7 @@ Built with SwiftUI and AppKit. Requires **macOS 13 or later** and supports both 
 
 ## Preview
 
-![Kenar expanding from an edge island, displaying Codex and Claude quota windows separately, and collapsing when the pointer leaves](assets/kenar-demo.gif)
+<img src="assets/kenar-demo.gif" alt="Kenar expanding from an edge island, displaying Codex and Claude quota windows separately, and collapsing when the pointer leaves" width="360">
 
 *Rendered from Kenar’s native SwiftUI interface with labeled sample data. Codex shows session and weekly limits; Claude shows session, all-model weekly, and model-specific limits when reported by the account.*
 
