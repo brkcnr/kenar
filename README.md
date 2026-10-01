@@ -4,6 +4,12 @@ A native macOS usage monitor for **Claude Code, Codex, Cursor, and Gemini CLI**.
 
 Built with SwiftUI and AppKit. Requires **macOS 13 or later** and supports both Apple Silicon and Intel Macs.
 
+## Preview
+
+![Kenar expanding from an edge island, displaying Claude quota windows, and collapsing when the pointer leaves](assets/kenar-demo.gif)
+
+*Rendered from Kenar’s native SwiftUI interface with labeled sample data.*
+
 ## Features
 
 - **An unobtrusive edge island.** The collapsed island shows only providers with a successful, recent connection. Hover to expand it and inspect every enabled provider, including connection errors. Pin the panel to keep it open.
@@ -100,6 +106,14 @@ KENAR_PREVIEW=1 dist/Kenar.app/Contents/MacOS/Kenar
 ```
 
 Preview mode makes no provider requests, scans no local token records, and writes no history. [VALIDATION.md](VALIDATION.md) records tested behavior and remaining verification limits.
+
+Regenerate the README animation on macOS using the same native views:
+
+```sh
+bash render-demo.sh
+```
+
+The renderer uses an isolated settings domain and sample data. It writes the GIF to `assets/kenar-demo.gif` and inspection frames to `.build/demo/`.
 
 Some usage endpoints are internal provider interfaces rather than documented public APIs. Account compatibility and response formats may change.
 
