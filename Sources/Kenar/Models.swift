@@ -148,12 +148,38 @@ extension Notification.Name { static let kenarDataChanged = Notification.Name("k
 enum Preview {
     static var isEnabled: Bool { ProcessInfo.processInfo.environment["KENAR_PREVIEW"] == "1" || Bundle.main.bundleIdentifier == "local.kenar.preview" }
     static var snapshots: [ProviderSnapshot] {
-        zip(["codex", "claude", "cursor", "gemini"], [42.0, 68, 23, 36]).map { id, percent in
-            ProviderSnapshot(id: id, name: id == "claude" ? "Claude" : id.capitalized, systemImage: "circle", windows: [
-                UsageWindow(label: id == "gemini" ? "Gemini Pro" : "Current session", usedPercent: percent, resetsAt: Date().addingTimeInterval(8280)),
-                UsageWindow(label: "Weekly", usedPercent: 31, resetsAt: Date().addingTimeInterval(86400 * 4))
-            ], error: nil, isDemo: true, updatedAt: Date())
+        sampleSnapshots(at: Date())
+    }
+    /// Use each provider's response schema and parser, so preview details match
+    /// the real panel rather than giving every account Codex's quota windows.
+    static func sampleSnapshots(at now: Date) -> [ProviderSnapshot] {
+        let iso = ISO8601DateFormatter()
+        func reset(_ seconds: TimeInterval) -> String { iso.string(from: now.addingTimeInterval(seconds)) }
+        func sample(_ id: String, _ response: String, _ parse: (Data) -> [UsageWindow]) -> ProviderSnapshot {
+            ProviderSnapshot(id: id, name: id == "claude" ? "Claude" : id.capitalized,
+                systemImage: "circle", windows: parse(Data(response.utf8)), error: nil,
+                isDemo: true, updatedAt: now)
         }
+        return [
+            sample("codex", """
+                {"rate_limit":{"primary_window":{"used_percent":42,"reset_at":"\(reset(8280))"},
+                "secondary_window":{"used_percent":31,"reset_at":"\(reset(345600))"}}}
+                """, CodexProvider.parseUsage),
+            sample("claude", """
+                {"limits":[{"kind":"session","percent":68,"resets_at":"\(reset(16140))"},
+                {"kind":"weekly_all","percent":16,"resets_at":"\(reset(81540))"},
+                {"kind":"weekly_scoped","percent":12,"resets_at":"\(reset(81540))",
+                "scope":{"model":{"display_name":"Fable"}}}]}
+                """, ClaudeProvider.parseUsage),
+            sample("cursor", """
+                {"billingCycleEnd":"\(reset(864000))","individualUsage":{"plan":{
+                "totalPercentUsed":23,"autoPercentUsed":18,"apiPercentUsed":5}}}
+                """, CursorProvider.parseUsage),
+            sample("gemini", """
+                {"buckets":[{"modelId":"Gemini Pro","tokenType":"REQUESTS","remainingFraction":0.64,"resetTime":"\(reset(32400))"},
+                {"modelId":"Gemini Flash","tokenType":"REQUESTS","remainingFraction":0.88,"resetTime":"\(reset(32400))"}]}
+                """, GeminiProvider.parseUsage)
+        ]
     }
     static func history(provider: String) -> [QuotaPoint] {
         let now = Date()

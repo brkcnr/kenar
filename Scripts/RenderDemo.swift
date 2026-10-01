@@ -20,7 +20,7 @@ struct DemoDesktop: View {
                 Text(caption.step).font(.system(size: 12, weight: .medium)).padding(.top, 16)
                 Spacer()
                 Text("Native SwiftUI preview\nSample data").font(.system(size: 9)).foregroundStyle(.secondary)
-            }.padding(28).frame(width: 216, height: 560, alignment: .topLeading)
+            }.padding(28).frame(width: 216, height: 640, alignment: .topLeading)
         }.environment(\.colorScheme, .dark)
     }
 }
@@ -56,7 +56,7 @@ final class DemoPointer: NSView {
         let store = UsageStore(providers: [], analytics: nil)
         store.snapshots = Preview.snapshots
         let state = PanelState(), caption = DemoCaption()
-        let canvasSize = NSSize(width: 520, height: 560)
+        let canvasSize = NSSize(width: 520, height: 640)
         let canvas = NSView(frame: NSRect(origin: .zero, size: canvasSize))
         let desktop = NSHostingView(rootView: DemoDesktop(caption: caption))
         desktop.frame = canvas.bounds; canvas.addSubview(desktop)
@@ -65,9 +65,13 @@ final class DemoPointer: NSView {
         func frame(_ size: NSSize) -> NSRect {
             DisplayGeometry.frame(edge: .right, visible: canvas.bounds, size: size, expanded: true)
         }
-        let compact = frame(NSSize(width: 66, height: 228))
-        let expanded = frame(NSSize(width: 300, height: 364))
-        let detailed = frame(NSSize(width: 300, height: 522))
+        let compact = frame(NSSize(width: 66, height: Double(store.snapshots.count) * 42 + 48 + 12))
+        let expandedSize = NSSize(width: 300, height: Double(store.snapshots.count) * 56 + 122 + 18)
+        let expanded = frame(expandedSize)
+        func details(_ id: String) -> NSRect {
+            let windows = store.snapshots.first { $0.id == id }!.windows.count
+            return frame(NSSize(width: expandedSize.width, height: expandedSize.height + Double(windows) * 60 + 38))
+        }
         panel.frame = compact; canvas.addSubview(panel)
         let cursor = DemoPointer(frame: NSRect(x: 375, y: 136, width: 20, height: 26))
         canvas.addSubview(cursor)
@@ -79,6 +83,7 @@ final class DemoPointer: NSView {
         RunLoop.main.run(until: Date().addingTimeInterval(0.2))
 
         var frames: [(CGImage, Double)] = []
+        var keyframes: [(String, Int)] = []
         let scale: CGFloat = 1.5
         func capture(_ duration: Double, settle: Double = 0.04) {
             canvas.layoutSubtreeIfNeeded()
@@ -111,13 +116,24 @@ final class DemoPointer: NSView {
                 capture(0.04)
             }
         }
+        func hold(_ name: String, _ duration: Double) {
+            capture(duration, settle: 0.2)
+            keyframes.append((name, frames.count - 1))
+        }
         capture(1.0)
-        pointer(CGPoint(x: 492, y: 280)); capture(PanelInteraction.pollInterval)
-        state.expanded = true; resize(expanded); capture(1.4, settle: 0.2)
-        caption.step = "Click a provider"
-        pointer(CGPoint(x: 352, y: 306)); capture(0.25)
-        state.selected = "claude"; resize(detailed)
-        caption.step = "Inspect quota windows"; capture(2.0, settle: 0.2)
+        keyframes.append(("compact", frames.count - 1))
+        pointer(CGPoint(x: 492, y: 320)); capture(PanelInteraction.pollInterval)
+        state.expanded = true; resize(expanded); hold("expanded", 1.0)
+        caption.step = "Codex · session & weekly"
+        pointer(CGPoint(x: 352, y: 378)); capture(0.25)
+        state.selected = "codex"; resize(details("codex")); hold("codex", 2.0)
+        // Collapse Codex before opening Claude, just as the panel does when
+        // switching providers. Each detail card is taken from that snapshot.
+        pointer(CGPoint(x: 352, y: 458)); capture(0.15)
+        state.selected = nil; resize(expanded)
+        caption.step = "Claude · three quota windows"
+        pointer(CGPoint(x: 352, y: 322)); capture(0.25)
+        state.selected = "claude"; resize(details("claude")); hold("claude", 2.5)
         caption.step = "Move away to collapse"
         pointer(CGPoint(x: 170, y: 154)); capture(PanelInteraction.pollInterval)
         state.selected = nil; state.expanded = false; resize(compact)
@@ -134,13 +150,13 @@ final class DemoPointer: NSView {
         }
         guard CGImageDestinationFinalize(destination) else { fatalError("GIF encoding failed") }
         // Save representative frames beside the scratch path for visual inspection.
-        for (name, index) in [("compact", 0), ("expanded", 15), ("detail", 30)] {
+        for (name, index) in keyframes {
             let url = destinationURL.deletingLastPathComponent().appendingPathComponent("demo-\(name).png")
             let png = CGImageDestinationCreateWithURL(url as CFURL, UTType.png.identifier as CFString, 1, nil)!
             CGImageDestinationAddImage(png, frames[min(index, frames.count-1)].0, nil)
             CGImageDestinationFinalize(png)
         }
-        print("Rendered \(frames.count) native frames, \(String(format: "%.2f", frames.map(\.1).reduce(0,+))) seconds, 780×840 pixels")
+        print("Rendered \(frames.count) native frames, \(String(format: "%.2f", frames.map(\.1).reduce(0,+))) seconds, \(Int(canvasSize.width * scale))×\(Int(canvasSize.height * scale)) pixels")
         print(destinationURL.path)
     }
 }

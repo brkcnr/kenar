@@ -6,6 +6,7 @@ import Foundation
         do { try suite.setUpWithError(); suite.testGeminiInvalidFractionsAndMalformedResponse(); try suite.tearDownWithError(); print("CHECK: testGeminiInvalidFractionsAndMalformedResponse") } catch { CheckSupport.fail("testGeminiInvalidFractionsAndMalformedResponse: \(error)") }
         do { try suite.setUpWithError(); suite.testGeminiMultipleQuotaTypesHaveStableIDs(); try suite.tearDownWithError(); print("CHECK: testGeminiMultipleQuotaTypesHaveStableIDs") } catch { CheckSupport.fail("testGeminiMultipleQuotaTypesHaveStableIDs: \(error)") }
         do { try suite.setUpWithError(); suite.testClaudeLegacyAndNewModels(); try suite.tearDownWithError(); print("CHECK: testClaudeLegacyAndNewModels") } catch { CheckSupport.fail("testClaudeLegacyAndNewModels: \(error)") }
+        do { try suite.setUpWithError(); try suite.testPreviewUsesProviderSpecificQuotaSchemas(); try suite.tearDownWithError(); print("CHECK: testPreviewUsesProviderSpecificQuotaSchemas") } catch { CheckSupport.fail("testPreviewUsesProviderSpecificQuotaSchemas: \(error)") }
         do { try suite.setUpWithError(); suite.testCodexResetPrefersAbsoluteTimestamp(); try suite.tearDownWithError(); print("CHECK: testCodexResetPrefersAbsoluteTimestamp") } catch { CheckSupport.fail("testCodexResetPrefersAbsoluteTimestamp: \(error)") }
         do { try suite.setUpWithError(); suite.testCursorUnlimitedHasNoFakeZero(); try suite.tearDownWithError(); print("CHECK: testCursorUnlimitedHasNoFakeZero") } catch { CheckSupport.fail("testCursorUnlimitedHasNoFakeZero: \(error)") }
         do { try suite.setUpWithError(); suite.testMissingLoginNeverShowsDemoValues(); try suite.tearDownWithError(); print("CHECK: testMissingLoginNeverShowsDemoValues") } catch { CheckSupport.fail("testMissingLoginNeverShowsDemoValues: \(error)") }
@@ -41,7 +42,7 @@ import Foundation
         do { try suite.setUpWithError(); suite.testClaudeExpiredAndMalformedCredentialsStayDistinct(); try suite.tearDownWithError(); print("CHECK: testClaudeExpiredAndMalformedCredentialsStayDistinct") } catch { CheckSupport.fail("testClaudeExpiredAndMalformedCredentialsStayDistinct: \(error)") }
         do { try suite.setUpWithError(); try suite.testClaudeFailedExplicitCheckCannotReviveOldCache(); try suite.tearDownWithError(); print("CHECK: testClaudeFailedExplicitCheckCannotReviveOldCache") } catch { CheckSupport.fail("testClaudeFailedExplicitCheckCannotReviveOldCache: \(error)") }
         do { try suite.setUpWithError(); try await suite.testRetryOnlyFetchesSelectedProviderWithInteractiveIntent(); try suite.tearDownWithError(); print("CHECK: testRetryOnlyFetchesSelectedProviderWithInteractiveIntent") } catch { CheckSupport.fail("testRetryOnlyFetchesSelectedProviderWithInteractiveIntent: \(error)") }
-        print("\(CheckSupport.failures == 0 ? "PASS" : "FAIL"): 39 scenarios, \(CheckSupport.failures) failures")
+        print("\(CheckSupport.failures == 0 ? "PASS" : "FAIL"): 40 scenarios, \(CheckSupport.failures) failures")
         exit(CheckSupport.failures == 0 ? 0 : 1)
     }
 }

@@ -4,9 +4,10 @@ Current version: **1.2.2**. Validation performed on macOS with Swift 6.3.3 and X
 
 ## Automated checks
 
-`bash test.sh` passes **39 scenarios**, covering:
+`bash test.sh` passes **40 scenarios**, covering:
 
 - Provider quota parsing, missing fields, unknown models, unlimited plans, and reset timestamps.
+- Provider-specific preview schemas: Codex session/weekly windows, Claude session/all-model/model-scoped windows, Cursor plan usage, and Gemini request quotas.
 - Missing, expired, malformed, and blocked Claude credentials; immediate recovery after a failed read; source re-reading on manual retry; and provider-specific retry intent.
 - Notification thresholds, deduplication across restarts, and quota-period changes.
 - SQLite retention, failed-measurement exclusion, reset-period separation, streaming event deduplication, and transactional import rollback.

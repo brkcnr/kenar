@@ -6,9 +6,9 @@ Built with SwiftUI and AppKit. Requires **macOS 13 or later** and supports both 
 
 ## Preview
 
-![Kenar expanding from an edge island, displaying Claude quota windows, and collapsing when the pointer leaves](assets/kenar-demo.gif)
+![Kenar expanding from an edge island, displaying Codex and Claude quota windows separately, and collapsing when the pointer leaves](assets/kenar-demo.gif)
 
-*Rendered from Kenar’s native SwiftUI interface with labeled sample data.*
+*Rendered from Kenar’s native SwiftUI interface with labeled sample data. Codex shows session and weekly limits; Claude shows session, all-model weekly, and model-specific limits when reported by the account.*
 
 ## Features
 
@@ -90,7 +90,7 @@ bash test.sh
 bash build.sh
 ```
 
-`test.sh` uses XCTest with full Xcode, or a standalone assertion runner for the same scenarios when only Command Line Tools are installed. The current suite contains **39 scenarios**. `build.sh` compiles both architectures, combines them into a universal app, signs it ad hoc, and verifies the disk image.
+`test.sh` uses XCTest with full Xcode, or a standalone assertion runner for the same scenarios when only Command Line Tools are installed. The current suite contains **40 scenarios**. `build.sh` compiles both architectures, combines them into a universal app, signs it ad hoc, and verifies the disk image.
 
 Inspect a live provider connection without printing tokens or raw response bodies:
 

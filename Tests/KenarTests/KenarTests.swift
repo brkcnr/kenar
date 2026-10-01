@@ -38,6 +38,21 @@ final class KenarTests: XCTestCase {
         let w = ClaudeProvider.parseUsage(data(#"{"limits":[{"kind":"weekly_scoped","percent":12,"scope":{"model":{"display_name":"Future model"}}}]}"#))
         XCTAssertEqual(w.first?.label,"Future model")
     }
+    func testPreviewUsesProviderSpecificQuotaSchemas() throws {
+        let now = Date(timeIntervalSince1970: 1_800_000_000)
+        let samples = Preview.sampleSnapshots(at: now)
+        let codex = try XCTUnwrap(samples.first { $0.id == "codex" })
+        let claude = try XCTUnwrap(samples.first { $0.id == "claude" })
+        let cursor = try XCTUnwrap(samples.first { $0.id == "cursor" })
+        let gemini = try XCTUnwrap(samples.first { $0.id == "gemini" })
+        XCTAssertEqual(codex.windows.map(\.label), ["Current session", "Weekly"])
+        XCTAssertEqual(claude.windows.map(\.label), ["Current session", "All models", "Fable"])
+        XCTAssertNotEqual(codex.primary?.resetsAt, claude.primary?.resetsAt)
+        XCTAssertEqual(cursor.primary?.label, "Included usage")
+        XCTAssertTrue(cursor.windows.allSatisfy { $0.label != "Weekly" })
+        XCTAssertTrue(gemini.windows.allSatisfy { $0.modelID != nil && $0.unit == "REQUESTS" })
+        XCTAssertTrue(samples.allSatisfy { $0.isDemo && $0.error == nil && $0.updatedAt == now })
+    }
     func testCodexResetPrefersAbsoluteTimestamp() {
         let absolute = Date().addingTimeInterval(600).timeIntervalSince1970
         XCTAssertEqual(CodexProvider.resetDate(["resets_at":absolute,"resets_in_seconds":50])!.timeIntervalSince1970,absolute,accuracy: 0.01)
