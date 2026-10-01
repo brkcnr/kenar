@@ -1,0 +1,74 @@
+"Current session" = "Sesión actual";
+"All models" = "Todos los modelos";
+"Weekly" = "Semanal";
+"%@ Usage" = "Uso de %@";
+"%d%% Used" = "%d %% usado";
+"Resets soon" = "Se reinicia pronto";
+"Resets in %d min" = "Se reinicia en %d min";
+"Resets in %d h" = "Se reinicia en %d h";
+"Resets in %d h %d min" = "Se reinicia en %d h %d min";
+"Resets %@" = "Se reinicia %@";
+"DEMO" = "DEMO";
+"No data" = "Sin datos";
+"Refresh now" = "Actualizar ahora";
+"Appearance" = "Apariencia";
+"Black" = "Negro";
+"Liquid Glass" = "Liquid Glass";
+"System" = "Sistema";
+"Launch at login" = "Abrir al iniciar sesión";
+"Notifications" = "Notificaciones";
+"Test notification" = "Notificación de prueba";
+"Quit Brink" = "Salir de Brink";
+"Language" = "Idioma";
+"System default" = "Predeterminado del sistema";
+"Claude Code credentials not found" = "No se encontraron credenciales de Claude Code";
+"Codex CLI credentials not found (~/.codex/auth.json)" = "No se encontraron credenciales de Codex CLI (~/.codex/auth.json)";
+"Unauthorized — open Claude Code once to refresh login" = "No autorizado — abre Claude Code una vez para renovar la sesión";
+"Unauthorized — run `codex` once to refresh login" = "No autorizado — ejecuta `codex` una vez para renovar la sesión";
+"No usage data in response" = "La respuesta no contiene datos de uso";
+"HTTP %d" = "HTTP %d";
+"%@ — %@ limit reached" = "%@ — límite de «%@» alcanzado";
+"You've used 100 %%.%@ I'll let you know when it resets." = "Has usado el 100 %%.%@ Te avisaré cuando se reinicie.";
+"%@ — %@ reset" = "%@ — «%@» reiniciado";
+"Your full limit is available again." = "Tu límite completo vuelve a estar disponible.";
+
+"just now" = "ahora mismo";
+"Providers" = "Proveedores";
+
+/* Rate limit */
+"Rate limited — showing cached usage, retrying in ~%d min" = "Límite de peticiones — mostrando uso en caché, reintento en ~%d min";
+"Rate limited (429) — retrying in ~%d min" = "Límite de peticiones (429) — reintento en ~%d min";
+/* Cursor */
+"Included usage" = "Uso incluido";
+"Auto" = "Auto";
+"API" = "API";
+"On-demand" = "Bajo demanda";
+"Cursor CLI credentials not found — run `cursor-agent login`" = "Credenciales de Cursor CLI no encontradas — ejecuta `cursor-agent login`";
+"Unauthorized — run `cursor-agent login` to refresh" = "No autorizado — ejecuta `cursor-agent login` para actualizar";
+
+/* Empty state */
+"No CLI found" = "No se encontró ninguna CLI";
+"Brink reads your local logins. Sign in to Claude Code, Codex CLI or Cursor CLI and its ring appears automatically." = "Brink lee tus inicios de sesión locales. Inicia sesión en Claude Code, Codex CLI o Cursor CLI y su anillo aparecerá automáticamente.";
+
+/* Cost breakdown */
+"This session" = "Esta sesión";
+"Elsewhere" = "En otro lugar";
+"Other (%d)" = "Otros (%d)";
+"Not measured yet" = "Aún sin medir";
+"Brink matches every rise in your limit to the project you were working in. The first reading takes a few minutes." = "Brink asocia cada subida de tu límite con el proyecto en el que estabas trabajando. La primera medición tarda unos minutos.";
+"Spent outside this Mac — claude.ai, another device, or a background job." = "Consumido fuera de este Mac: claude.ai, otro dispositivo o un trabajo en segundo plano.";
+"%d turns · %d files" = "%d turnos · %d archivos";
+"%d turns · %d files · %d skipped" = "%d turnos · %d archivos · %d omitidos";
+
+/* Ranges */
+"This week" = "Esta semana";
+"All time" = "Histórico";
+"share of your total usage" = "parte de tu uso total";
+
+/* Month range + short picker labels */
+"This month" = "Este mes";
+"Session" = "Sesión";
+"Week" = "Semana";
+"Month" = "Mes";
+"All" = "Todo";
+"share of the work in this range" = "parte del trabajo en este periodo";

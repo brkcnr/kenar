@@ -1,0 +1,74 @@
+"Current session" = "現在のセッション";
+"All models" = "すべてのモデル";
+"Weekly" = "週間";
+"%@ Usage" = "%@ の使用状況";
+"%d%% Used" = "%d%% 使用";
+"Resets soon" = "まもなくリセット";
+"Resets in %d min" = "%d 分後にリセット";
+"Resets in %d h" = "%d 時間後にリセット";
+"Resets in %d h %d min" = "%d 時間 %d 分後にリセット";
+"Resets %@" = "%@ にリセット";
+"DEMO" = "デモ";
+"No data" = "データなし";
+"Refresh now" = "今すぐ更新";
+"Appearance" = "外観";
+"Black" = "ブラック";
+"Liquid Glass" = "Liquid Glass";
+"System" = "システム";
+"Launch at login" = "ログイン時に起動";
+"Notifications" = "通知";
+"Test notification" = "テスト通知";
+"Quit Brink" = "Brink を終了";
+"Language" = "言語";
+"System default" = "システムのデフォルト";
+"Claude Code credentials not found" = "Claude Code の認証情報が見つかりません";
+"Codex CLI credentials not found (~/.codex/auth.json)" = "Codex CLI の認証情報が見つかりません (~/.codex/auth.json)";
+"Unauthorized — open Claude Code once to refresh login" = "認証エラー — Claude Code を一度開いてログインを更新してください";
+"Unauthorized — run `codex` once to refresh login" = "認証エラー — `codex` を一度実行してログインを更新してください";
+"No usage data in response" = "応答に使用状況データがありません";
+"HTTP %d" = "HTTP %d";
+"%@ — %@ limit reached" = "%@ — 「%@」の上限に達しました";
+"You've used 100 %%.%@ I'll let you know when it resets." = "100%% 使用しました。%@ リセットされたらお知らせします。";
+"%@ — %@ reset" = "%@ — 「%@」がリセットされました";
+"Your full limit is available again." = "上限が再び全て使用できます。";
+
+"just now" = "たった今";
+"Providers" = "プロバイダ";
+
+/* Rate limit */
+"Rate limited — showing cached usage, retrying in ~%d min" = "レート制限 — キャッシュした使用状況を表示中、約 %d 分後に再試行";
+"Rate limited (429) — retrying in ~%d min" = "レート制限 (429) — 約 %d 分後に再試行";
+/* Cursor */
+"Included usage" = "含まれる使用量";
+"Auto" = "自動";
+"API" = "API";
+"On-demand" = "オンデマンド";
+"Cursor CLI credentials not found — run `cursor-agent login`" = "Cursor CLI の認証情報が見つかりません — `cursor-agent login` を実行してください";
+"Unauthorized — run `cursor-agent login` to refresh" = "認証エラー — 更新するには `cursor-agent login` を実行してください";
+
+/* Empty state */
+"No CLI found" = "CLI が見つかりません";
+"Brink reads your local logins. Sign in to Claude Code, Codex CLI or Cursor CLI and its ring appears automatically." = "Brink はローカルのログイン情報を読み取ります。Claude Code、Codex CLI、Cursor CLI のいずれかにサインインすると、リングが自動的に表示されます。";
+
+/* Cost breakdown */
+"This session" = "このセッション";
+"Elsewhere" = "この Mac 以外";
+"Other (%d)" = "その他 (%d)";
+"Not measured yet" = "まだ計測されていません";
+"Brink matches every rise in your limit to the project you were working in. The first reading takes a few minutes." = "Brink は上限の増加を、そのとき作業していたプロジェクトに対応づけます。最初の計測には数分かかります。";
+"Spent outside this Mac — claude.ai, another device, or a background job." = "この Mac の外で消費 — claude.ai、別のデバイス、またはバックグラウンド処理。";
+"%d turns · %d files" = "%d ターン · %d ファイル";
+"%d turns · %d files · %d skipped" = "%d ターン · %d ファイル · %d 件スキップ";
+
+/* Ranges */
+"This week" = "今週";
+"All time" = "全期間";
+"share of your total usage" = "総使用量に占める割合";
+
+/* Month range + short picker labels */
+"This month" = "今月";
+"Session" = "セッション";
+"Week" = "週";
+"Month" = "月";
+"All" = "全体";
+"share of the work in this range" = "この期間の作業に占める割合";

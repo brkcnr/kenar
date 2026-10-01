@@ -1,0 +1,74 @@
+"Current session" = "현재 세션";
+"All models" = "모든 모델";
+"Weekly" = "주간";
+"%@ Usage" = "%@ 사용량";
+"%d%% Used" = "%d%% 사용";
+"Resets soon" = "곧 초기화";
+"Resets in %d min" = "%d분 후 초기화";
+"Resets in %d h" = "%d시간 후 초기화";
+"Resets in %d h %d min" = "%d시간 %d분 후 초기화";
+"Resets %@" = "%@ 초기화";
+"DEMO" = "데모";
+"No data" = "데이터 없음";
+"Refresh now" = "지금 새로고침";
+"Appearance" = "모양";
+"Black" = "블랙";
+"Liquid Glass" = "Liquid Glass";
+"System" = "시스템";
+"Launch at login" = "로그인 시 실행";
+"Notifications" = "알림";
+"Test notification" = "테스트 알림";
+"Quit Brink" = "Brink 종료";
+"Language" = "언어";
+"System default" = "시스템 기본값";
+"Claude Code credentials not found" = "Claude Code 로그인 정보를 찾을 수 없음";
+"Codex CLI credentials not found (~/.codex/auth.json)" = "Codex CLI 로그인 정보를 찾을 수 없음 (~/.codex/auth.json)";
+"Unauthorized — open Claude Code once to refresh login" = "인증 실패 — Claude Code를 한 번 열어 로그인을 갱신하세요";
+"Unauthorized — run `codex` once to refresh login" = "인증 실패 — `codex`를 한 번 실행해 로그인을 갱신하세요";
+"No usage data in response" = "응답에 사용량 데이터가 없음";
+"HTTP %d" = "HTTP %d";
+"%@ — %@ limit reached" = "%@ — “%@” 한도 도달";
+"You've used 100 %%.%@ I'll let you know when it resets." = "100%% 사용했습니다.%@ 초기화되면 알려드릴게요.";
+"%@ — %@ reset" = "%@ — “%@” 초기화됨";
+"Your full limit is available again." = "전체 한도를 다시 사용할 수 있습니다.";
+
+"just now" = "방금";
+"Providers" = "제공자";
+
+/* Rate limit */
+"Rate limited — showing cached usage, retrying in ~%d min" = "요청 제한 — 캐시된 사용량 표시 중, 약 %d분 후 재시도";
+"Rate limited (429) — retrying in ~%d min" = "요청 제한 (429) — 약 %d분 후 재시도";
+/* Cursor */
+"Included usage" = "포함 사용량";
+"Auto" = "자동";
+"API" = "API";
+"On-demand" = "온디맨드";
+"Cursor CLI credentials not found — run `cursor-agent login`" = "Cursor CLI 자격 증명을 찾을 수 없습니다 — `cursor-agent login`을 실행하세요";
+"Unauthorized — run `cursor-agent login` to refresh" = "인증되지 않음 — 갱신하려면 `cursor-agent login`을 실행하세요";
+
+/* Empty state */
+"No CLI found" = "CLI를 찾을 수 없음";
+"Brink reads your local logins. Sign in to Claude Code, Codex CLI or Cursor CLI and its ring appears automatically." = "Brink는 로컬 로그인 정보를 읽습니다. Claude Code, Codex CLI 또는 Cursor CLI에 로그인하면 링이 자동으로 나타납니다.";
+
+/* Cost breakdown */
+"This session" = "이번 세션";
+"Elsewhere" = "다른 곳";
+"Other (%d)" = "기타 (%d)";
+"Not measured yet" = "아직 측정되지 않음";
+"Brink matches every rise in your limit to the project you were working in. The first reading takes a few minutes." = "Brink는 한도가 오를 때마다 그 시점에 작업하던 프로젝트와 연결합니다. 첫 측정에는 몇 분이 걸립니다.";
+"Spent outside this Mac — claude.ai, another device, or a background job." = "이 Mac 밖에서 사용됨 — claude.ai, 다른 기기 또는 백그라운드 작업.";
+"%d turns · %d files" = "%d턴 · %d개 파일";
+"%d turns · %d files · %d skipped" = "%d턴 · %d개 파일 · %d개 건너뜀";
+
+/* Ranges */
+"This week" = "이번 주";
+"All time" = "전체 기간";
+"share of your total usage" = "전체 사용량 중 비중";
+
+/* Month range + short picker labels */
+"This month" = "이번 달";
+"Session" = "세션";
+"Week" = "주";
+"Month" = "월";
+"All" = "전체";
+"share of the work in this range" = "이 기간 작업 중 비중";

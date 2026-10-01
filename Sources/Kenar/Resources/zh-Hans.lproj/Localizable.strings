@@ -1,0 +1,74 @@
+"Current session" = "当前会话";
+"All models" = "所有模型";
+"Weekly" = "每周";
+"%@ Usage" = "%@ 用量";
+"%d%% Used" = "已使用 %d%%";
+"Resets soon" = "即将重置";
+"Resets in %d min" = "%d 分钟后重置";
+"Resets in %d h" = "%d 小时后重置";
+"Resets in %d h %d min" = "%d 小时 %d 分钟后重置";
+"Resets %@" = "%@ 重置";
+"DEMO" = "演示";
+"No data" = "暂无数据";
+"Refresh now" = "立即刷新";
+"Appearance" = "外观";
+"Black" = "黑色";
+"Liquid Glass" = "Liquid Glass";
+"System" = "跟随系统";
+"Launch at login" = "登录时启动";
+"Notifications" = "通知";
+"Test notification" = "测试通知";
+"Quit Brink" = "退出 Brink";
+"Language" = "语言";
+"System default" = "系统默认";
+"Claude Code credentials not found" = "未找到 Claude Code 登录凭证";
+"Codex CLI credentials not found (~/.codex/auth.json)" = "未找到 Codex CLI 登录凭证 (~/.codex/auth.json)";
+"Unauthorized — open Claude Code once to refresh login" = "未授权 — 请打开一次 Claude Code 以刷新登录";
+"Unauthorized — run `codex` once to refresh login" = "未授权 — 请运行一次 `codex` 以刷新登录";
+"No usage data in response" = "响应中没有用量数据";
+"HTTP %d" = "HTTP %d";
+"%@ — %@ limit reached" = "%@ — “%@”已达上限";
+"You've used 100 %%.%@ I'll let you know when it resets." = "已使用 100%%。%@ 重置后我会通知你。";
+"%@ — %@ reset" = "%@ — “%@”已重置";
+"Your full limit is available again." = "你的全部额度已恢复。";
+
+"just now" = "刚刚";
+"Providers" = "服务商";
+
+/* Rate limit */
+"Rate limited — showing cached usage, retrying in ~%d min" = "已限流 — 显示缓存用量，约 %d 分钟后重试";
+"Rate limited (429) — retrying in ~%d min" = "已限流 (429) — 约 %d 分钟后重试";
+/* Cursor */
+"Included usage" = "包含用量";
+"Auto" = "自动";
+"API" = "API";
+"On-demand" = "按需";
+"Cursor CLI credentials not found — run `cursor-agent login`" = "未找到 Cursor CLI 凭据 — 请运行 `cursor-agent login`";
+"Unauthorized — run `cursor-agent login` to refresh" = "未授权 — 请运行 `cursor-agent login` 刷新";
+
+/* Empty state */
+"No CLI found" = "未找到 CLI";
+"Brink reads your local logins. Sign in to Claude Code, Codex CLI or Cursor CLI and its ring appears automatically." = "Brink 读取你本地的登录信息。登录 Claude Code、Codex CLI 或 Cursor CLI 后，对应的圆环会自动出现。";
+
+/* Cost breakdown */
+"This session" = "本次会话";
+"Elsewhere" = "其他来源";
+"Other (%d)" = "其他 (%d)";
+"Not measured yet" = "尚未测量";
+"Brink matches every rise in your limit to the project you were working in. The first reading takes a few minutes." = "Brink 会把额度的每次上升，对应到你当时正在处理的项目。首次测量需要几分钟。";
+"Spent outside this Mac — claude.ai, another device, or a background job." = "在这台 Mac 之外消耗 — claude.ai、其他设备或后台任务。";
+"%d turns · %d files" = "%d 轮 · %d 个文件";
+"%d turns · %d files · %d skipped" = "%d 轮 · %d 个文件 · 跳过 %d";
+
+/* Ranges */
+"This week" = "本周";
+"All time" = "全部时间";
+"share of your total usage" = "占总用量的比例";
+
+/* Month range + short picker labels */
+"This month" = "本月";
+"Session" = "会话";
+"Week" = "本周";
+"Month" = "本月";
+"All" = "全部";
+"share of the work in this range" = "该期间工作量的占比";

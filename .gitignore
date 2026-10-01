@@ -1,0 +1,14 @@
+.build/
+.swiftpm/
+dist/
+.DS_Store
+*.app/
+*.dmg
+*.zip
+.env
+.env.*
+credentials.json
+auth.json
+*.sqlite
+*.sqlite-shm
+*.sqlite-wal

@@ -1,0 +1,288 @@
+/* Usage window labels */
+"Current session" = "Current session";
+"All models" = "All models";
+"Weekly" = "Weekly";
+
+/* Card */
+"%@ Usage" = "%@ Usage";
+"%d%% Used" = "%d%% Used";
+"Resets soon" = "Resets soon";
+"Resets in %d min" = "Resets in %d min";
+"Resets in %d h" = "Resets in %d h";
+"Resets in %d h %d min" = "Resets in %d h %d min";
+"Resets %@" = "Resets %@";
+"DEMO" = "DEMO";
+"No data" = "No data";
+
+/* Menu */
+"Refresh now" = "Refresh now";
+"Appearance" = "Appearance";
+"Black" = "Black";
+"Liquid Glass" = "Liquid Glass";
+"System" = "System";
+"Launch at login" = "Launch at login";
+"Notifications" = "Notifications";
+"Test notification" = "Test notification";
+"Quit Brink" = "Quit Brink";
+
+/* Errors */
+"Claude Code credentials not found" = "Claude Code credentials not found";
+"Codex CLI credentials not found (~/.codex/auth.json)" = "Codex CLI credentials not found (~/.codex/auth.json)";
+"Unauthorized — open Claude Code once to refresh login" = "Unauthorized — open Claude Code once to refresh login";
+"Unauthorized — run `codex` once to refresh login" = "Unauthorized — run `codex` once to refresh login";
+"No usage data in response" = "No usage data in response";
+"HTTP %d" = "HTTP %d";
+
+/* Notifications */
+"%@ — %@ limit reached" = "%@ — %@ limit reached";
+"You've used 100 %%.%@ I'll let you know when it resets." = "You've used 100 %%.%@ I'll let you know when it resets.";
+"%@ — %@ reset" = "%@ — %@ reset";
+"Your full limit is available again." = "Your full limit is available again.";
+
+/* Language */
+"Language" = "Language";
+"System default" = "System default";
+
+"just now" = "just now";
+"Providers" = "Providers";
+
+/* Rate limit */
+"Rate limited — showing cached usage, retrying in ~%d min" = "Rate limited — showing cached usage, retrying in ~%d min";
+"Rate limited (429) — retrying in ~%d min" = "Rate limited (429) — retrying in ~%d min";
+/* Cursor */
+"Included usage" = "Included usage";
+"Auto" = "Auto";
+"API" = "API";
+"On-demand" = "On-demand";
+"Cursor CLI credentials not found — run `cursor-agent login`" = "Cursor CLI credentials not found — run `cursor-agent login`";
+"Unauthorized — run `cursor-agent login` to refresh" = "Unauthorized — run `cursor-agent login` to refresh";
+
+/* Empty state */
+"No CLI found" = "No CLI found";
+"Brink reads your local logins. Sign in to Claude Code, Codex CLI or Cursor CLI and its ring appears automatically." = "Brink reads your local logins. Sign in to Claude Code, Codex CLI or Cursor CLI and its ring appears automatically.";
+
+/* Cost breakdown */
+"This session" = "This session";
+"Elsewhere" = "Elsewhere";
+"Other (%d)" = "Other (%d)";
+"Not measured yet" = "Not measured yet";
+"Brink matches every rise in your limit to the project you were working in. The first reading takes a few minutes." = "Brink matches every rise in your limit to the project you were working in. The first reading takes a few minutes.";
+"Spent outside this Mac — claude.ai, another device, or a background job." = "Spent outside this Mac — claude.ai, another device, or a background job.";
+"%d turns · %d files" = "%d turns · %d files";
+"%d turns · %d files · %d skipped" = "%d turns · %d files · %d skipped";
+
+/* Ranges */
+"This week" = "This week";
+"All time" = "All time";
+"share of your total usage" = "share of your total usage";
+
+/* Month range + short picker labels */
+"This month" = "This month";
+"Session" = "Session";
+"Week" = "Week";
+"Month" = "Month";
+"All" = "All";
+"share of the work in this range" = "share of the work in this range";
+
+/* Kenar interface */
+"Sağ" = "Right";
+"Sol" = "Left";
+"Sistem" = "System";
+"Açık" = "Light";
+"Koyu" = "Dark";
+"Dil" = "Language";
+"Ayarlar" = "Settings";
+"Kenar Ayarları" = "Kenar Settings";
+"Paneli çalışma biçimine göre düzenle." = "Adjust the panel to the way you work.";
+"Bölüm" = "Section";
+"Görünüm" = "Appearance";
+"Bildirimler" = "Notifications";
+"Sağlayıcılar" = "Providers";
+"Monitör" = "Display";
+"Ana monitör" = "Main display";
+"Ekran kenarı" = "Screen edge";
+"Tema" = "Theme";
+"Panel genişliği" = "Panel width";
+"Yüzey yoğunluğu" = "Surface opacity";
+"Yazı boyutu" = "Font size";
+"Vurgu rengi" = "Accent color";
+"Turkuaz" = "Teal";
+"Mavi" = "Blue";
+"Mor" = "Purple";
+"Turuncu" = "Orange";
+"Girişte başlat" = "Launch at login";
+"Girişte başlatma değiştirilemedi. Uygulamayı Applications klasöründen çalıştırıp tekrar dene." = "Could not change launch at login. Run the app from Applications and try again.";
+"Kenar’dan çık" = "Quit Kenar";
+"Şimdi yenile" = "Refresh now";
+"Paneli sabitle" = "Pin panel";
+"Sabitlemeyi kaldır" = "Unpin panel";
+"Adaya daralt" = "Collapse to island";
+"Kullanım geçmişi" = "Usage history";
+"Proje analizi" = "Project analysis";
+"Kullanım ve Projeler" = "Usage and Projects";
+"Kenar · Kullanım ve Projeler" = "Kenar · Usage and Projects";
+"Önizleme · Örnek veriler" = "Preview · Sample data";
+"ÖNİZLEME · Örnek veriler; geçmiş kaydedilmez." = "PREVIEW · Sample data; history is not saved.";
+"Örnek" = "Sample";
+"Kenar · Önizleme, örnek veriler" = "Kenar · Preview, sample data";
+"Kenar · Bağlantı bekleniyor; ayrıntıları aç" = "Kenar · Waiting for a connection; open details";
+"Kenar · Kullanım panelini aç" = "Kenar · Open usage panel";
+"Kenar önizleme adası · örnek veriler" = "Kenar preview island · sample data";
+"Kenar kullanım adası" = "Kenar usage island";
+"Bağlantı bekleniyor; sağlayıcı ayrıntılarını aç" = "Waiting for a connection; open provider details";
+"Ayarlardan görünür sağlayıcı seç." = "Choose visible providers in Settings.";
+"Kota verisi bekleniyor…" = "Waiting for quota data…";
+"Bu ölçüm güncel değil." = "This measurement is out of date.";
+"Güncel değil" = "Out of date";
+"Yenileniyor" = "Refreshing";
+"Bekleniyor" = "Waiting";
+"Sınırsız" = "Unlimited";
+"Bilinmiyor" = "Unknown";
+"Kota sınırı yok" = "No quota limit";
+"Veri bekleniyor" = "Waiting for data";
+"Bağlantıyı kontrol et" = "Check connection";
+"Yenilenme bilinmiyor" = "Reset time unknown";
+"Yenilenme zamanı bilinmiyor" = "Reset time unknown";
+"İstek kotası" = "Request quota";
+"Ölçüm: %@" = "Unit: %@";
+"%@, %@; kota ayrıntıları" = "%@, %@; quota details";
+"%@, %@%@%@" = "%@, %@%@%@";
+", güncel değil" = ", out of date";
+", örnek veri" = ", sample data";
+"Kullanım uyarıları" = "Usage alerts";
+"Yenilenme zamanı bildirimi" = "Quota reset notification";
+"Her eşik, aynı kota döneminde yalnızca bir kez bildirilir." = "Each threshold is notified once per quota period.";
+"Bildirim göndererek test et" = "Send a test notification";
+"Bildirim görünmüyorsa Sistem Ayarları → Bildirimler → Kenar bölümünü kontrol et." = "If notifications do not appear, check System Settings → Notifications → Kenar.";
+"%@ göster" = "Show %@";
+"Google Cloud proje kimliği (isteğe bağlı)" = "Google Cloud project ID (optional)";
+"Google hesabıyla giriş gerekir. Proje kimliği otomatik bulunamazsa CLI’de kullandığın kimliği gir." = "Sign in with a Google account. If the project ID cannot be found automatically, enter the ID used by your CLI.";
+"Tokenlar yalnızca ilgili sağlayıcıya gönderilir. CLI oturumları değiştirilmez; süresi dolan oturum ilgili CLI’de yenilenir." = "Tokens are sent only to their provider. CLI credentials are not changed; renew expired sessions in the relevant CLI.";
+"Brink temelinde geliştirilmiştir · MIT lisansı" = "Based on Brink · MIT license";
+"Kaynak proje" = "Source project";
+"Hesap kotası ve bu Mac’teki token tüketimi" = "Account quota and token usage on this Mac";
+"Sağlayıcı" = "Provider";
+"Geçmiş" = "History";
+"Yerel veritabanı açılamadı. Uygulamanın veri klasörüne yazabildiğini kontrol et." = "Could not open the local database. Check that the app can write to its data folder.";
+"Veriler bu Mac’te saklanır · Kota geçmişi 90 gün · Konuşma içeriği kaydedilmez" = "Data stays on this Mac · 90 days of quota history · Conversation content is not saved";
+"Dönem" = "Period";
+"Bugün" = "Today";
+"7 gün" = "7 days";
+"30 gün" = "30 days";
+"90 gün" = "90 days";
+"Model / Kota" = "Model / Quota";
+"Henüz kota ölçümü yok" = "No quota measurements yet";
+"Başarılı yenilemeler geldikçe günlük ve haftalık geçmiş burada oluşacak." = "Daily and weekly history will appear here as successful measurements arrive.";
+"Zaman" = "Time";
+"Kullanım" = "Usage";
+"Kota dönemi" = "Quota period";
+"Kullanılan kota (%)" = "Quota used (%)";
+"Çizgiler farklı kota dönemleri arasında bağlanmaz. Kota yenilenmesi tüketim artışı sayılmaz." = "Lines do not connect separate quota periods. Quota resets do not count as increased usage.";
+"%d ölçüm" = "%d measurements";
+"Son ölçüm: %@ · %@" = "Last measurement: %@ · %@";
+"Aralık" = "Range";
+"Cursor proje kırılımı sunmuyor" = "Cursor does not provide a project breakdown";
+"Bağlı kullanım kaynağı hesap toplamını veriyor. Toplam kullanım geçmişini Geçmiş sekmesinde görebilirsin." = "The connected source reports account totals. View total usage in the History tab.";
+"Bu aralıkta yerel token kaydı yok" = "No local token records in this range";
+"Claude Code, Codex veya Gemini CLI’nin bu Mac’te kaydettiği oturumlar otomatik aktarılır." = "Claude Code, Codex and Gemini CLI sessions recorded on this Mac are imported automatically.";
+"Bu sağlayıcının en son yerel oturumu" = "This provider’s latest local session";
+"Yerel token tüketimi" = "Local token usage";
+"Girdi %@ · Çıktı %@ · Önbellek okuma %@%@" = "Input %@ · Output %@ · Cache read %@%@";
+" · Yazma %@" = " · Cache write %@";
+"Tokenlar sağlayıcılar arasında aynı kota veya maliyet anlamına gelmez. Önbellek okuması ayrıca gösterilir; Claude’un ayrı önbellek okuma sayacı toplamın dışında tutulur." = "Tokens do not represent the same quota or cost across providers. Cache reads are shown separately; Claude’s separate cache read counter is excluded from the total.";
+"İlişkilendirilen kota payı · Tahmin" = "Attributed quota share · Estimate";
+"Kota" = "Quota";
+"Gözlenen kota artışları, aynı aralıktaki tokenlara göre dağıtılır. Bu değerler hesabın kesin proje faturası değildir; farklı dönemlerdeki yüzde puanları toplanır." = "Observed quota increases are allocated by tokens in the same interval. These are estimates, not exact project bills; percentage points across periods are added.";
+"Başka kullanım / açıklanamayan" = "Other usage / unexplained";
+"Projesi çözümlenemedi" = "Unresolved project";
+"%.1f yüzde puanı" = "%.1f percentage points";
+"Henüz ilişkilendirilebilir kota artışı gözlenmedi." = "No attributable quota increase has been observed yet.";
+"Oturum" = "Session";
+"Hafta" = "Week";
+"Ay" = "Month";
+"Tümü" = "All";
+"Haftalık" = "Weekly";
+"Tüm modeller · Haftalık" = "All models · Weekly";
+"Dahil kullanım" = "Included usage";
+"Ek kullanım" = "On-demand usage";
+"Yenilenme kontrol ediliyor…" = "Checking quota reset…";
+"Yenilenme: %d sn" = "Resets in %d s";
+"Yenilenme: %d dk" = "Resets in %d min";
+"Yenilenme: %d sa %d dk" = "Resets in %d h %d min";
+"Yenilenme: %d gün %d sa" = "Resets in %d d %d h";
+"Yerel veritabanı açılamadı; geçmiş kaydedilmiyor." = "Could not open the local database; history is not being saved.";
+"Geçmiş kaydı: %@" = "History storage: %@";
+"Örnek oturum" = "Sample session";
+"Örnek model" = "Sample model";
+"SQLite sorgusu hazırlanamadı." = "Could not prepare the SQLite query.";
+"SQLite yazma işlemi tamamlanamadı." = "Could not complete the SQLite write.";
+"Yerel kayıt işlemi başlatılamadı." = "Could not start the local recording transaction.";
+"Yerel kayıt işlemi tamamlanamadı." = "Could not complete the local recording transaction.";
+"Gemini CLI’de Google hesabıyla oturum aç veya oturumunu yenile: gemini" = "Sign in with a Google account or renew your Gemini CLI session: gemini";
+"Gemini hesabından okunabilir kota verisi gelmedi." = "No readable quota data was returned for this Gemini account.";
+"Gemini’ye bağlanılamadı. Ağ bağlantısını ve CLI oturumunu kontrol et." = "Could not connect to Gemini. Check your network and CLI session.";
+"Gemini CLI Google Cloud proje kimliği bulunamadı. Kenar ayarlarından CLI’de kullandığın proje kimliğini gir." = "Could not find the Gemini CLI Google Cloud project ID. Enter the project ID used by your CLI in Kenar Settings.";
+"Gemini CLI oturumunu yenile: gemini" = "Renew your Gemini CLI session: gemini";
+"Gemini kota erişimi yok. Google hesabını ve proje ayarını kontrol et." = "No access to Gemini quota. Check your Google account and project settings.";
+"Gemini sorgu sınırına ulaşıldı; sonraki yenilemede tekrar denenecek." = "Gemini request limit reached; retrying at the next refresh.";
+"Gemini kota servisi yanıt vermedi (HTTP %d)." = "The Gemini quota service did not respond (HTTP %d).";
+"Kullanım %@ seviyesinde. Uyarı eşiği: %@. %@" = "Usage is at %@. Alert threshold: %@. %@";
+"%@ · Yenilenme zamanı" = "%@ · Quota reset time";
+"%@ için bildirilen yenilenme zamanı geldi. Güncel kotayı Kenar’dan kontrol edebilirsin." = "The reported reset time for %@ has arrived. Check the current quota in Kenar.";
+"Bildirimler çalışıyor. Kullanım eşiklerini sağlayıcı bazında ayarlayabilirsin." = "Notifications are working. You can adjust alert thresholds for each provider.";
+
+/* Previously translated status strings */
+"Mevcut oturum" = "Current session";
+"Tüm modeller" = "All models";
+"%@ Kullanımı" = "%@ Usage";
+"%%%d kullanıldı" = "%d%% Used";
+"Az sonra sıfırlanır" = "Resets soon";
+"%d dk sonra sıfırlanır" = "Resets in %d min";
+"%d sa sonra sıfırlanır" = "Resets in %d h";
+"%d sa %d dk sonra sıfırlanır" = "Resets in %d h %d min";
+"%@ sıfırlanır" = "Resets %@";
+"Veri yok" = "No data";
+"Siyah" = "Black";
+"Test bildirimi" = "Test notification";
+"Brink'ten çık" = "Quit Brink";
+"Claude Code oturum bilgisi bulunamadı" = "Claude Code credentials not found";
+"Codex CLI oturum bilgisi bulunamadı (~/.codex/auth.json)" = "Codex CLI credentials not found (~/.codex/auth.json)";
+"Yetkisiz — oturumu yenilemek için Claude Code'u bir kez aç" = "Unauthorized — open Claude Code once to refresh login";
+"Yetkisiz — oturumu yenilemek için `codex`'i bir kez çalıştır" = "Unauthorized — run `codex` once to refresh login";
+"Yanıtta kullanım verisi yok" = "No usage data in response";
+"%@ — %@ limiti doldu" = "%@ — %@ limit reached";
+"%%100 kullanıldı.%@ Sıfırlanınca haber vereceğim." = "You've used 100 %%.%@ I'll let you know when it resets.";
+"%@ — %@ sıfırlandı" = "%@ — %@ reset";
+"Limitin tamamı yeniden hazır." = "Your full limit is available again.";
+"Sistem varsayılanı" = "System default";
+"az önce" = "just now";
+"Hız sınırı — önbellekteki kullanım gösteriliyor, ~%d dk sonra yeniden denenecek" = "Rate limited — showing cached usage, retrying in ~%d min";
+"Hız sınırı (429) — ~%d dk sonra yeniden denenecek" = "Rate limited (429) — retrying in ~%d min";
+"İsteğe bağlı" = "On-demand";
+"Cursor CLI kimlik bilgileri bulunamadı — `cursor-agent login` çalıştırın" = "Cursor CLI credentials not found — run `cursor-agent login`";
+"Yetkisiz — yenilemek için `cursor-agent login` çalıştırın" = "Unauthorized — run `cursor-agent login` to refresh";
+"CLI bulunamadı" = "No CLI found";
+"Brink yerel oturumlarını okur. Claude Code, Codex CLI ya da Cursor CLI ile giriş yap; halkası kendiliğinden belirir." = "Brink reads your local logins. Sign in to Claude Code, Codex CLI or Cursor CLI and its ring appears automatically.";
+"Bu oturumda" = "This session";
+"Başka yerde" = "Elsewhere";
+"Diğer (%d)" = "Other (%d)";
+"Henüz ölçülmedi" = "Not measured yet";
+"Brink, limitindeki her artışı o sırada çalıştığın projeyle eşleştirir. İlk ölçüm birkaç dakika sürer." = "Brink matches every rise in your limit to the project you were working in. The first reading takes a few minutes.";
+"Bu Mac'in dışında harcandı — claude.ai, başka bir cihaz ya da arka plan işi." = "Spent outside this Mac — claude.ai, another device, or a background job.";
+"%d tur · %d dosya" = "%d turns · %d files";
+"%d tur · %d dosya · %d atlandı" = "%d turns · %d files · %d skipped";
+"Bu hafta" = "This week";
+"Tüm zamanlar" = "All time";
+"toplam kullanımının payı" = "share of your total usage";
+"Bu ay" = "This month";
+"bu aralıktaki işin payı" = "share of the work in this range";
+
+// Claude connection recovery
+"Retry connection" = "Retry connection";
+"Claude Code login not found — run /login in Claude Code. Opening Claude Desktop alone does not connect Kenar." = "Claude Code login not found — run /login in Claude Code. Opening Claude Desktop alone does not connect Kenar.";
+"Claude Code access token expired — run /usage in Claude Code, then retry the connection." = "Claude Code access token expired — run /usage in Claude Code, then retry the connection.";
+"Claude Code login could not be read — check /status in Claude Code." = "Claude Code login could not be read — check /status in Claude Code.";
+"Keychain access is required — unlock your Mac, then retry and allow Kenar to read the Claude Code login." = "Keychain access is required — unlock your Mac, then retry and allow Kenar to read the Claude Code login.";
+"macOS blocked access to the Claude Code login — retry and approve the Keychain request for Kenar." = "macOS blocked access to the Claude Code login — retry and approve the Keychain request for Kenar.";
+"Claude Code Keychain error (%d) — retry the connection." = "Claude Code Keychain error (%d) — retry the connection.";
+"Retry %@ connection" = "Retry %@ connection";
