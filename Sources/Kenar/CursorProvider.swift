@@ -86,7 +86,7 @@ struct CursorProvider: UsageProvider {
         let reset = ClaudeProvider.isoDate(root["billingCycleEnd"])
 
         // Unlimited plans have no meaningful percentage to show.
-        if let unlimited = ClaudeProvider.number(root["isUnlimited"]), unlimited == 1 {
+        if (root["isUnlimited"] as? Bool) == true || ClaudeProvider.number(root["isUnlimited"]) == 1 {
             return [UsageWindow(label: "Included usage", usedPercent: nil, resetsAt: reset, isUnlimited: true)]
         }
 
@@ -107,7 +107,7 @@ struct CursorProvider: UsageProvider {
 
         // On-demand / usage-based spend, only when the user has enabled it.
         if let onDemand = individual?["onDemand"] as? [String: Any],
-           ClaudeProvider.number(onDemand["enabled"]) == 1,
+           ((onDemand["enabled"] as? Bool) == true || ClaudeProvider.number(onDemand["enabled"]) == 1),
            let used = ClaudeProvider.number(onDemand["used"]),
            let limit = ClaudeProvider.number(onDemand["limit"]), limit > 0 {
             windows.append(UsageWindow(label: "On-demand",

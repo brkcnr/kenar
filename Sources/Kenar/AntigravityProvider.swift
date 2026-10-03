@@ -65,8 +65,12 @@ struct AntigravitySample: Codable, Equatable {
         date.timeIntervalSince1970.isFinite && (0...253_402_300_799).contains(date.timeIntervalSince1970)
     }
     @discardableResult static func receive(_ data: Data, directory: URL, at now: Date = Date()) throws -> Bool {
-        guard var sample = capture(data, at: now) else { return false }
-        let url = directory.appendingPathComponent("antigravity-usage.json")
+        guard let sample = capture(data, at: now) else { return false }
+        return try store(sample,directory:directory,filename:"antigravity-usage.json",at:now)
+    }
+    @discardableResult static func store(_ incoming: AntigravitySample, directory: URL, filename: String, at now: Date) throws -> Bool {
+        var sample = incoming
+        let url = directory.appendingPathComponent(filename)
         if let old = read(url) {
             // Normalize small rounding jitter in reset hints. Absolute reset
             // timestamps from agy are preferred when capturing the payload.
@@ -109,14 +113,21 @@ struct AntigravityProvider: UsageProvider {
 
 enum AntigravityIntegration {
     static var directory: URL { AppPaths.config("AGY_CONFIG_DIR", fallback: ".gemini/antigravity-cli") }
-    static func quote(_ value: String) -> String { "'" + value.replacingOccurrences(of: "'", with: "'\\''") + "'" }
+    static func quote(_ value: String) -> String { StatusLineInstaller.quote(value) }
     static func install(directory: URL = directory, executable: URL) throws -> URL {
+        try StatusLineInstaller.install(directory:directory,executable:executable,argument:"--antigravity-statusline",options:["enabled":true,"stack_with_default":true])
+    }
+}
+
+enum StatusLineInstaller {
+    static func quote(_ value: String) -> String { "'" + value.replacingOccurrences(of: "'", with: "'\\''") + "'" }
+    static func install(directory: URL, executable: URL, argument: String, options: [String:Any]) throws -> URL {
         let settingsURL = directory.appendingPathComponent("settings.json")
         let launcher = directory.appendingPathComponent("kenar-statusline.sh")
         var settings: [String: Any] = [:]
         if FileManager.default.fileExists(atPath: settingsURL.path) {
             guard (try settingsURL.resourceValues(forKeys: [.isSymbolicLinkKey])).isSymbolicLink != true,
-                  let value = try JSONSerialization.jsonObject(with: Data(contentsOf: settingsURL)) as? [String: Any] else { throw failure("Antigravity ayar dosyası okunamadı; değiştirilmedi.") }
+                  let value = try JSONSerialization.jsonObject(with: Data(contentsOf: settingsURL)) as? [String: Any] else { throw failure("CLI ayar dosyası okunamadı; değiştirilmedi.") }
             settings = value
         }
         var ownCommands = [quote(launcher.path), launcher.path]
@@ -125,13 +136,15 @@ enum AntigravityIntegration {
         }
         if let existing = settings["statusLine"], !(existing is NSNull) {
             guard let config = existing as? [String: Any], let command = config["command"] as? String,
-                  ownCommands.contains(command) else { throw failure("Mevcut agy status line ayarın korunuyor. Kenar bağlantısını eklemek için önce bu ayarı düzenle.") }
+                  ownCommands.contains(command) else { throw failure("Mevcut özel status line ayarın korunuyor. Kenar bağlantısını eklemek için önce bu ayarı düzenle.") }
         }
-        let script = "#!/bin/sh\nexec \(quote(executable.path)) --antigravity-statusline\n"
+        let script = "#!/bin/sh\nexec \(quote(executable.path)) \(argument)\n"
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true, attributes: [.posixPermissions: 0o700])
         try Data(script.utf8).write(to: launcher, options: .atomic)
         try FileManager.default.setAttributes([.posixPermissions: 0o700], ofItemAtPath: launcher.path)
-        settings["statusLine"] = ["type": "command", "command": quote(launcher.path), "enabled": true, "stack_with_default": true]
+        var config = settings["statusLine"] as? [String:Any] ?? [:]
+        config["type"] = "command"; config["command"] = quote(launcher.path)
+        options.forEach { config[$0.key] = $0.value }; settings["statusLine"] = config
         try JSONSerialization.data(withJSONObject: settings, options: [.prettyPrinted, .sortedKeys]).write(to: settingsURL, options: .atomic)
         try FileManager.default.setAttributes([.posixPermissions: 0o600], ofItemAtPath: settingsURL.path)
         return launcher

@@ -86,6 +86,9 @@ extension UsageProvider {
     private(set) var probingCredentials = false
     private var lastCredentialProbe: Date = .distantPast
     private var lastAntigravityFileStamp: Date?
+    private var lastClaudeFileStamp: Date?
+    private var claudeSourceRevision = 0
+    private var pendingClaudeRefresh = false
     init(providers: [UsageProvider], analytics: AnalyticsStore?,
          credentialProbe: @escaping @Sendable () -> Bool = { ClaudeProvider.canRecoverConnection() },
          quotaObserver: @escaping @MainActor (ProviderSnapshot) -> Void = { Notifier.shared.observe($0) }) {
@@ -118,6 +121,10 @@ extension UsageProvider {
             lastAntigravityFileStamp = stamp
             refresh(providerID: "antigravity", userInitiated: false)
         }
+        if !isRefreshing, providers.contains(where: { $0.id == "claude" }),
+           let stamp = try? ClaudeQuotaBridge.sourceURL.resourceValues(forKeys:[.contentModificationDateKey]).contentModificationDate, stamp != lastClaudeFileStamp {
+            lastClaudeFileStamp = stamp; refresh(providerID:"claude",userInitiated:false)
+        }
         updateConnectionHealth(at: now)
         for snap in snapshots where !snap.isDemo {
             for window in snap.windows {
@@ -148,16 +155,25 @@ extension UsageProvider {
         merged.windows = previous.windows; merged.updatedAt = previous.updatedAt
         return merged
     }
+    func connectionsChanged() {
+        claudeSourceRevision += 1
+        if let index = snapshots.firstIndex(where:{ $0.id == "claude" }) {
+            snapshots[index] = ProviderSnapshot(id:"claude",name:"Claude",systemImage:"asterisk",windows:[],error:nil)
+        }
+        if isRefreshing { pendingClaudeRefresh = true } else { refresh(providerID:"claude",userInitiated:false) }
+    }
     func refreshAll(userInitiated: Bool = false) { refresh(providerID: nil, userInitiated: userInitiated) }
     func retryConnection(providerID: String) { refresh(providerID: providerID, userInitiated: true) }
-    private func refresh(providerID: String?, userInitiated: Bool) {
+    func refresh(providerID: String?, userInitiated: Bool) {
         guard !isRefreshing, !Preview.isEnabled else { return }
         isRefreshing = true
+        let sourceRevision = claudeSourceRevision
         let providers = self.providers.filter { providerID == nil || $0.id == providerID }
         Task {
             await withTaskGroup(of: ProviderSnapshot.self) { group in
                 for provider in providers { group.addTask { await provider.fetch(userInitiated: userInitiated) } }
                 for await fresh in group {
+                    if fresh.id == "claude", sourceRevision != claudeSourceRevision { continue }
                     let previous = snapshots.first { $0.id == fresh.id }
                     if let index = snapshots.firstIndex(where: { $0.id == fresh.id }) {
                         snapshots[index] = Self.merging(fresh, with: snapshots[index])
@@ -170,6 +186,7 @@ extension UsageProvider {
                 }
             }
             lastRefresh = Date(); isRefreshing = false
+            if pendingClaudeRefresh { pendingClaudeRefresh = false; refresh(providerID:"claude",userInitiated:false) }
             if let error = analytics?.lastError { storageError = L("Geçmiş kaydı: %@",error) }
             NotificationCenter.default.post(name: .kenarDataChanged, object: nil)
         }

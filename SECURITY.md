@@ -1,12 +1,13 @@
 # Security and privacy
 
-Kenar reads existing CLI login credentials to request usage information from the corresponding provider. It does not modify CLI credential stores, rotate refresh tokens, or send conversation content to a backend.
+Kenar uses its own Claude web login or reads existing CLI login credentials to request usage information from the corresponding provider. It does not modify CLI credential stores, rotate refresh tokens, or send conversation content to a backend.
 
 ## Credential destinations
 
 | Provider | Credential source | Request destination |
 | --- | --- | --- |
-| Claude | macOS Keychain `Claude Code-credentials`, or `.claude/.credentials.json` | `api.anthropic.com` |
+| Claude account | Kenar-owned WebKit session; no external browser or Desktop cookies | `claude.ai` |
+| Claude Code | Quota-only status line payload, or read-only Code OAuth credentials | Local file, or `api.anthropic.com` |
 | Codex | `.codex/auth.json` | `chatgpt.com` |
 | Cursor | Existing Cursor CLI login | `cursor.com` |
 | Antigravity | No credentials read; local quota payload from an authenticated `agy` session | Local file only; no Google requests from Kenar |
@@ -22,6 +23,14 @@ Analytics records contain quota values, timestamps, provider/model identifiers, 
 ## Antigravity bridge
 
 The explicit connection action registers a command in `~/.gemini/antigravity-cli/settings.json` and installs `kenar-statusline.sh`; unrelated settings and custom commands are preserved. The launcher invokes Kenar with `--antigravity-statusline`. This mode reads bounded JSON on stdin and exits without starting the macOS UI or requesting provider data. Only validated quota bucket identifiers, fractions, reset times, and the receipt timestamp are atomically stored in `antigravity-usage.json` with mode `0600`. It discards the rest of the payload, including email, workspace paths, conversation identifiers, context token counts, and credentials. Repeated repaint payloads are deduplicated, with a two-minute receipt heartbeat. Kenar does not access the Antigravity Keychain profile or send prompts.
+
+## Claude account and quota bridge
+
+A user completes web login in Kenar’s own WKWebView. WebKit stores that session in Kenar’s app data; Kenar sends its Claude session cookie only to fixed HTTPS `claude.ai` endpoints. It does not read or decrypt Claude Desktop tokens or other browsers’ cookie stores. Account/workspace IDs and display names support workspace selection. Changing connection source clears the displayed Claude quota and discards in-flight responses from the previous source.
+
+Explicit Code bridge setup writes a launcher and `statusLine` configuration in the selected Claude config directory, preserving unrelated settings and refusing custom-command replacement. `--claude-statusline` filters bounded stdin to five-hour/seven-day subscription quotas only; session IDs, transcript paths, prompts and context counters are discarded. Measurements older than five minutes and expired windows are not accepted as fresh. The receiver does not start the UI, read credentials or send requests.
+
+Antigravity analytics opens CLI SQLite databases read-only and extracts bounded usage/timestamp protobuf fields and workspace URIs. The decoder does not interpret prompt/tool payloads, and analytics stores no conversation content. WAL changes trigger imports; stable session/generation identifiers prevent repeated scans from counting events again.
 
 ## Claude Keychain access
 

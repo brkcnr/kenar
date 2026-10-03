@@ -44,6 +44,9 @@ struct ClaudeProvider: UsageProvider {
     func fetch() async -> ProviderSnapshot { await fetch(userInitiated: false) }
 
     func fetch(userInitiated: Bool) async -> ProviderSnapshot {
+        let source = await MainActor.run { Settings.shared.values.claudeSource ?? "automatic" }
+        if source == "web" { return await ClaudeWebConnection.shared.fetch() }
+        if source == "automatic", let bridge = ClaudeQuotaBridge.snapshot() { return bridge }
         if let until = Self.cooldownUntil, Date() < until {
             return Self.rateLimitedSnapshot(retryAt: until)
         }
@@ -218,6 +221,10 @@ struct ClaudeProvider: UsageProvider {
     }
 
     static func number(_ any: Any?) -> Double? {
+        if let number = any as? NSNumber {
+            guard CFGetTypeID(number) != CFBooleanGetTypeID() else { return nil }
+            return number.doubleValue
+        }
         if let d = any as? Double { return d }
         if let i = any as? Int { return Double(i) }
         if let s = any as? String { return Double(s) }

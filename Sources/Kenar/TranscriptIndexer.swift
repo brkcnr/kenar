@@ -15,7 +15,7 @@ final class TranscriptIndexer {
             "codex": AppPaths.config("CODEX_HOME", fallback: ".codex").appendingPathComponent("sessions"),
             "gemini": AppPaths.config("GEMINI_CLI_HOME", fallback: ".gemini").appendingPathComponent("tmp")
         ]
-        var imported = 0
+        var imported = explicitRoots == nil ? AntigravityIndexer(store: store).scan() : 0
         var destinations = roots.map { ($0.key,$0.value) }
         if explicitRoots == nil { destinations.append(("codex",AppPaths.config("CODEX_HOME",fallback:".codex").appendingPathComponent("archived_sessions"))) }
         // Import providers with explicit cwd metadata before resolving older

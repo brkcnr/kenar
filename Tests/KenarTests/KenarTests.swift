@@ -18,6 +18,141 @@ final class KenarTests: XCTestCase {
     private func snapshot(_ percent: Double, reset: Date? = nil, id: String = "codex", meter: String = "session") -> ProviderSnapshot {
         ProviderSnapshot(id: id,name: id,systemImage: "circle",windows: [UsageWindow(label: meter,usedPercent: percent,resetsAt: reset)],error: nil,updatedAt: Date())
     }
+    private func wireInteger(_ field: Int, _ value: UInt64) -> Data {
+        func v(_ value: UInt64) -> Data { var n=value, b=[UInt8](); repeat { var byte=UInt8(n&127); n >>= 7; if n != 0 { byte |= 128 }; b.append(byte) } while n != 0; return Data(b) }
+        return v(UInt64(field << 3)) + v(value)
+    }
+    private func wireBytes(_ field: Int, _ value: Data) -> Data {
+        let tag=UInt64((field << 3)|2), length=UInt64(value.count)
+        var b=[UInt8]()
+        for initial in [tag,length] { var n=initial; repeat { var x=UInt8(n&127); n >>= 7; if n != 0 { x |= 128 }; b.append(x) } while n != 0 }
+        return Data(b)+value
+    }
+    private func generation(input: UInt64 = 120, output: UInt64 = 80, timestamp: Date? = Date(), reference: UInt64 = 1) -> Data {
+        let usage = wireInteger(2,input)+wireInteger(3,output)+wireInteger(4,10)+wireInteger(5,70)+wireInteger(9,55)+wireInteger(10,25)
+        var inner=wireBytes(4,usage)+wireBytes(19,data("gemini-future"))
+        if let timestamp { inner += wireBytes(9,wireBytes(4,wireInteger(1,UInt64(timestamp.timeIntervalSince1970))+wireInteger(2,0))) }
+        return wireInteger(2,reference)+wireBytes(1,inner)+wireBytes(500,data("PRIVATE_CONTENT_NEVER_IMPORT"))
+    }
+    private func agyDatabase(_ name: String, workspace: URL? = nil) throws -> (URL, OpaquePointer) {
+        let folder = dir.appendingPathComponent("agy/conversations"); try FileManager.default.createDirectory(at:folder,withIntermediateDirectories:true)
+        let file=folder.appendingPathComponent(name+".db"); var handle: OpaquePointer?
+        XCTAssertEqual(sqlite3_open(file.path,&handle),SQLITE_OK); let db=try XCTUnwrap(handle)
+        XCTAssertEqual(sqlite3_exec(db,"PRAGMA user_version=1; CREATE TABLE gen_metadata(idx INTEGER PRIMARY KEY,data BLOB,size INTEGER); CREATE TABLE steps(idx INTEGER PRIMARY KEY,metadata BLOB)",nil,nil,nil),SQLITE_OK)
+        if let workspace {
+            let summary=dir.appendingPathComponent("agy/conversation_summaries.db"); var summaryDB: OpaquePointer?
+            XCTAssertEqual(sqlite3_open(summary.path,&summaryDB),SQLITE_OK); defer { sqlite3_close(summaryDB) }
+            XCTAssertEqual(sqlite3_exec(summaryDB,"CREATE TABLE IF NOT EXISTS conversation_summaries(conversation_id TEXT,workspace_uris TEXT)",nil,nil,nil),SQLITE_OK)
+            var st:OpaquePointer?;XCTAssertEqual(sqlite3_prepare_v2(summaryDB,"INSERT INTO conversation_summaries VALUES(?,?)",-1,&st,nil),SQLITE_OK)
+            defer { sqlite3_finalize(st) };let transient=unsafeBitCast(-1,to:sqlite3_destructor_type.self)
+            sqlite3_bind_text(st,1,name,-1,transient)
+            let uris=String(data:try JSONEncoder().encode([workspace.absoluteString]),encoding:.utf8)!
+            sqlite3_bind_text(st,2,uris,-1,transient);XCTAssertEqual(sqlite3_step(st),SQLITE_DONE)
+        }
+        return (file,db)
+    }
+    private func insertGeneration(_ blob:Data,index:Int,into db:OpaquePointer) {
+        var st:OpaquePointer?;XCTAssertEqual(sqlite3_prepare_v2(db,"INSERT INTO gen_metadata VALUES(?,?,?)",-1,&st,nil),SQLITE_OK);defer{sqlite3_finalize(st)}
+        sqlite3_bind_int(st,1,Int32(index)); let transient=unsafeBitCast(-1,to:sqlite3_destructor_type.self)
+        _ = blob.withUnsafeBytes { sqlite3_bind_blob(st,2,$0.baseAddress,Int32(blob.count),transient) };sqlite3_bind_int(st,3,Int32(blob.count))
+        XCTAssertEqual(sqlite3_step(st),SQLITE_DONE)
+    }
+    func testAntigravityGenerationDecoderIncludesReasoningOnce() throws {
+        let event=try XCTUnwrap(AntigravityIndexer.decode(generation(),index:3,session:"s",project:"/p",stepTimes:[:]))
+        XCTAssertEqual(event.input,120);XCTAssertEqual(event.output,80);XCTAssertEqual(event.cached,70);XCTAssertEqual(event.cacheWrite,10)
+        XCTAssertEqual(event.total,210);XCTAssertEqual(event.key,"s|3")
+    }
+    func testAntigravityGenerationDatesReferencedStepsAndRejectsBadUsage() throws {
+        let now=Date(), blob=generation(timestamp:nil)
+        XCTAssertNil(AntigravityIndexer.decode(blob,index:0,session:"s",project:"/p",stepTimes:[:]))
+        XCTAssertEqual(AntigravityIndexer.decode(blob,index:0,session:"s",project:"/p",stepTimes:[1:now])?.timestamp,now)
+        XCTAssertNil(AntigravityIndexer.decode(generation(input:UInt64.max),index:0,session:"s",project:"/p",stepTimes:[:]))
+        XCTAssertNil(AntigravityIndexer.decode(Data([10]),index:0,session:"s",project:"/p",stepTimes:[:]))
+        XCTAssertNil(try? UsageWire(Data(repeating:255,count:11)))
+    }
+    func testAntigravityDatabaseImportIsPrivateAndDeduplicated() throws {
+        let project=dir.appendingPathComponent("repo"), nested=project.appendingPathComponent("src")
+        try FileManager.default.createDirectory(at:project.appendingPathComponent(".git"),withIntermediateDirectories:true)
+        let (_,writer)=try agyDatabase("one",workspace:nested);defer{sqlite3_close(writer)}
+        insertGeneration(generation(),index:0,into:writer)
+        let db=try database(), indexer=AntigravityIndexer(store:db,directory:dir.appendingPathComponent("agy"))
+        XCTAssertEqual(indexer.scan(),1);XCTAssertEqual(indexer.scan(),0)
+        XCTAssertEqual(db.projects(provider:"antigravity",range:.all).first?.project,project.path)
+        XCTAssertEqual(db.projects(provider:"antigravity",range:.all).first?.tokens,210)
+        let raw=try Data(contentsOf:dir.appendingPathComponent("analytics.sqlite"))
+        XCTAssertFalse(String(decoding:raw,as:UTF8.self).contains("PRIVATE_CONTENT_NEVER_IMPORT"))
+    }
+    func testAntigravityWALUpdatesAndProjectSeparation() throws {
+        let a=dir.appendingPathComponent("a"),b=dir.appendingPathComponent("b")
+        let (_,first)=try agyDatabase("a",workspace:a),(_,second)=try agyDatabase("b",workspace:b)
+        defer{sqlite3_close(first);sqlite3_close(second)}
+        XCTAssertEqual(sqlite3_exec(first,"PRAGMA journal_mode=WAL",nil,nil,nil),SQLITE_OK)
+        insertGeneration(generation(input:100),index:0,into:first);insertGeneration(generation(input:200),index:0,into:second)
+        let db=try database(), indexer=AntigravityIndexer(store:db,directory:dir.appendingPathComponent("agy"))
+        _ = indexer.scan();insertGeneration(generation(input:300),index:1,into:first);_ = indexer.scan();_ = indexer.scan()
+        let rows=db.projects(provider:"antigravity",range:.all)
+        XCTAssertEqual(rows.count,2);XCTAssertEqual(rows.first{$0.project==a.path}?.input,400);XCTAssertEqual(rows.first{$0.project==b.path}?.input,200)
+        XCTAssertEqual(db.projects(provider:"antigravity",range:.session).count,1)
+    }
+    func testAntigravityWorkspaceUnknownAndSchemaVersion() throws {
+        let (file,writer)=try agyDatabase("unknown");defer{sqlite3_close(writer)}
+        insertGeneration(generation(),index:0,into:writer)
+        let db=try database(),resolver=TranscriptIndexer(store:db,roots:[:])
+        XCTAssertEqual(AntigravityIndexer.read(file,workspace:nil,resolver:resolver)?.first?.project,"__antigravity_unknown")
+        XCTAssertEqual(sqlite3_exec(writer,"PRAGMA user_version=2",nil,nil,nil),SQLITE_OK)
+        XCTAssertNil(AntigravityIndexer.read(file,workspace:nil,resolver:resolver))
+    }
+    func testClaudeQuotaBridgeParsesAccountQuotaWithoutContext() throws {
+        let now=Date(timeIntervalSince1970:1_800_000_000)
+        let sample=try XCTUnwrap(ClaudeQuotaBridge.capture(data(#"{"rate_limits":{"five_hour":{"used_percentage":1,"resets_at":1800001000},"seven_day":{"used_percentage":31}},"context_window":{"used_percentage":99}}"#),at:now))
+        XCTAssertEqual(try XCTUnwrap(sample.windows[0].usedPercent),31,accuracy:0.0001)
+        XCTAssertEqual(try XCTUnwrap(sample.windows[1].usedPercent),1,accuracy:0.0001)
+        XCTAssertEqual(sample.windows.last?.resetsAt,now.addingTimeInterval(1000))
+        XCTAssertNil(ClaudeQuotaBridge.capture(data(#"{"rate_limits":{"five_hour":{"used_percentage":true}},"context_window":{"used_percentage":50}}"#)))
+        XCTAssertNil(ClaudeQuotaBridge.capture(data(#"{"context_window":{"used_percentage":50}}"#)))
+    }
+    func testClaudeBridgeFreshnessAndPrivacy() throws {
+        let now=Date(),file=dir.appendingPathComponent("claude-usage.json")
+        let payload=data(#"{"rate_limits":{"five_hour":{"used_percentage":12}},"session_id":"PRIVATE_SESSION","transcript_path":"PRIVATE_TRANSCRIPT","context_window":{"total_input_tokens":100000}}"#)
+        try ClaudeQuotaBridge.receive(payload,directory:dir,at:now)
+        let fresh=try XCTUnwrap(ClaudeQuotaBridge.snapshot(at:now,sourceURL:file))
+        XCTAssertEqual(fresh.primary?.usedPercent ?? -1,12,accuracy:0.001)
+        XCTAssertEqual(fresh.primary?.id,"Current session");XCTAssertNil(fresh.primary?.modelID)
+        XCTAssertNil(ClaudeQuotaBridge.snapshot(at:now.addingTimeInterval(301),sourceURL:file))
+        XCTAssertFalse(try String(contentsOf:file,encoding:.utf8).contains("PRIVATE_"))
+        let expired = try JSONSerialization.data(withJSONObject:["rate_limits":["five_hour":["used_percentage":12,"resets_at":now.addingTimeInterval(-1).timeIntervalSince1970]]])
+        try ClaudeQuotaBridge.receive(expired,directory:dir,at:now)
+        XCTAssertNil(ClaudeQuotaBridge.snapshot(at:now,sourceURL:file))
+    }
+    func testClaudeStatusLineSetupKeepsCustomSettings() throws {
+        let config=dir.appendingPathComponent("settings.json")
+        try data(#"{"theme":"dark","model":"preferred"}"#).write(to:config)
+        let executable=URL(fileURLWithPath:"/Applications/Kenar.app/Contents/MacOS/Kenar")
+        let script=try ClaudeQuotaBridge.install(directory:dir,executable:executable)
+        XCTAssertTrue(try String(contentsOf:script,encoding:.utf8).contains("--claude-statusline"))
+        let object=try JSONSerialization.jsonObject(with:Data(contentsOf:config)) as! [String:Any]
+        XCTAssertEqual(object["model"] as? String,"preferred")
+        XCTAssertEqual((object["statusLine"] as? [String:Any])?["refreshInterval"] as? Int,60)
+        try data(#"{"statusLine":{"command":"custom"}}"#).write(to:config)
+        do{_ = try ClaudeQuotaBridge.install(directory:dir,executable:executable);XCTAssertTrue(false)}catch{}
+    }
+    @MainActor func testClaudeWebWorkspaceParsingAndPreferences() throws {
+        let workspaces=ClaudeWebConnection.parseWorkspaces(data(#"[{"uuid":"a3a72d29-3a92-45ec-b72b-e8e1f97345b1","name":"Personal","accessToken":"NEVER_STORE"},{"uuid":"not-an-id","name":"bad"}]"#))
+        XCTAssertEqual(workspaces.count,1);XCTAssertEqual(workspaces.first?.name,"Personal")
+        let domain="KenarTests.\(UUID().uuidString)"
+        let isolated=UserDefaults(suiteName:domain)!;defer{isolated.removePersistentDomain(forName:domain)}
+        let settings=Settings(defaults:isolated);settings.values.claudeSource="web";settings.values.claudeWorkspace=workspaces[0].id
+        let restored=Settings(defaults:isolated)
+        XCTAssertEqual(restored.values.claudeSource,"web");XCTAssertEqual(restored.values.claudeWorkspace,workspaces[0].id)
+    }
+    @MainActor func testClaudeSourceChangesDiscardInflightResult() async throws {
+        let provider=SourceChangeProvider(),db=try database()
+        let store=UsageStore(providers:[provider],analytics:db,quotaObserver:{_ in})
+        store.refreshAll();try await Task.sleep(nanoseconds:1_000_000);store.connectionsChanged()
+        for _ in 0..<300 where store.isRefreshing { try await Task.sleep(nanoseconds:1_000_000) }
+        XCTAssertFalse(store.isRefreshing);XCTAssertEqual(store.snapshots.first?.primary?.usedPercent,40)
+        XCTAssertEqual(db.points(provider:"claude",since:.distantPast).map(\.percent),[40])
+    }
     func testAntigravityOfficialQuotaAndResetHints() throws {
         let now = Date(timeIntervalSince1970: 1_800_000_000)
         let sample = try XCTUnwrap(AntigravitySample.capture(data(#"{"product":"antigravity","quota":{"gemini-weekly":{"remaining_fraction":0.9378,"reset_time":"2026-10-04T00:00:00Z","reset_in_seconds":20},"future-model":{"remaining_fraction":0.25,"reset_in_seconds":60}}}"#), at: now))
@@ -639,4 +774,14 @@ private final class RecoveryProbeSpy: @unchecked Sendable {
     }
     var count: Int { lock.lock(); defer { lock.unlock() }; return reads }
     func read() -> Bool { lock.lock(); defer { lock.unlock() }; reads += 1; return enabled }
+}
+
+private actor SourceChangeProvider: UsageProvider {
+    nonisolated let id="claude"
+    var attempts=0
+    func fetch() async -> ProviderSnapshot {
+        attempts += 1; let current=attempts
+        if current == 1 { try? await Task.sleep(nanoseconds:20_000_000) }
+        return ProviderSnapshot(id:id,name:"Claude",systemImage:"asterisk",windows:[UsageWindow(label:"session",usedPercent:current == 1 ? 10 : 40,resetsAt:nil)],error:nil,updatedAt:Date())
+    }
 }

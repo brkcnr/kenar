@@ -195,6 +195,8 @@ struct SettingsView: View {
     @State private var loginError: String?
     @State private var tab = 0
     @State private var agySetupMessage: String?
+    @State private var claudeSetupMessage: String?
+    @ObservedObject private var claudeWeb = ClaudeWebConnection.shared
     var body: some View {
         VStack(alignment: .leading, spacing: 18) {
             HStack { VStack(alignment: .leading) { Text(L("Kenar Ayarları")).font(.title2.weight(.semibold)); Text(L("Paneli çalışma biçimine göre düzenle.")).foregroundStyle(.secondary) }; Spacer() }
@@ -207,7 +209,7 @@ struct SettingsView: View {
                 }.padding(4)
             }
             Divider()
-            HStack { Text("\(settings.language.title) · Kenar 1.2").font(.caption).foregroundStyle(.secondary); Spacer(); Button(L("Kenar’dan çık")) { NSApp.terminate(nil) } }
+            HStack { Text("\(settings.language.title) · Kenar \(Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "Development")").font(.caption).foregroundStyle(.secondary); Spacer(); Button(L("Kenar’dan çık")) { NSApp.terminate(nil) } }
         }.padding(24).frame(width: 480,height: 600).preferredColorScheme(settings.scheme)
         .environment(\.locale, DisplayFormat.locale)
         .onReceive(NotificationCenter.default.publisher(for: NSApplication.didChangeScreenParametersNotification)) { _ in screens = NSScreen.screens }
@@ -263,6 +265,34 @@ struct SettingsView: View {
             ForEach(["codex","claude","cursor","antigravity"],id: \.self) { id in
                 Toggle(L("%@ göster",id.capitalized),isOn: Binding(get: { !settings.values.hiddenProviders.contains(id) },set: { enabled in settings.values.hiddenProviders.removeAll { $0 == id }; if !enabled { settings.values.hiddenProviders.append(id) } }))
             }
+            Divider()
+            Text(L("Claude hesabı")).fontWeight(.semibold)
+            Text(L("Aynı hesaptaki Web, Desktop, Code ve Cowork ortak kotayı kullanır. Ayrı sağlayıcılar olarak tekrar sayılmaz.")).font(.caption).foregroundStyle(.secondary)
+            Picker(L("Claude bağlantısı"),selection:Binding(get:{ settings.values.claudeSource ?? "automatic" },set:{ settings.values.claudeSource = $0; NotificationCenter.default.post(name:.kenarConnectionsChanged,object:nil) })) {
+                Text(L("Otomatik · Code aktarımı ve OAuth")).tag("automatic")
+                Text(L("Claude hesabı · Web girişi")).tag("web")
+                Text(L("Code kimlik bilgileri")).tag("oauth")
+            }
+            HStack {
+                Button(L("Claude hesabını bağla")) { claudeWeb.connect() }
+                Button(L("Code kota aktarımını bağla")) {
+                    do {
+                        let launcher = try ClaudeQuotaBridge.install(executable:Bundle.main.executableURL!)
+                        claudeSetupMessage = L("Code bağlantısı hazır: %@. Ayarlar otomatik yenilenir; kota alanları ilk model yanıtından sonra gelir.",launcher.path)
+                        settings.values.claudeSource = "automatic"
+                        NotificationCenter.default.post(name:.kenarConnectionsChanged,object:nil)
+                    } catch { claudeSetupMessage = error.localizedDescription }
+                }
+            }
+            if settings.values.claudeSource == "web", !claudeWeb.workspaces.isEmpty {
+                Picker(L("Çalışma alanı"),selection:Binding(get:{ settings.values.claudeWorkspace ?? "" },set:{ settings.values.claudeWorkspace = $0; NotificationCenter.default.post(name:.kenarConnectionsChanged,object:nil) })) {
+                    Text(L("Seç")).tag("")
+                    ForEach(claudeWeb.workspaces) { Text($0.name).tag($0.id) }
+                }
+            }
+            if settings.values.claudeSource == "web", let message = claudeWeb.connectionMessage { Text(message).font(.caption).textSelection(.enabled) }
+            if let claudeSetupMessage { Text(claudeSetupMessage).font(.caption).textSelection(.enabled) }
+            Text(L("Web girişi Kenar’ın kendi oturumunda saklanır; başka tarayıcının çerezleri okunmaz.")).font(.caption).foregroundStyle(.secondary)
             Divider()
             Text("Antigravity CLI · agy").fontWeight(.semibold)
             Text(L("agy kota verisi yerel status line bağlantısından alınır; Google oturumuna erişilmez.")).font(.caption).foregroundStyle(.secondary)
@@ -337,8 +367,7 @@ struct AnalyticsView: View {
         VStack(alignment: .leading,spacing: 14) {
             Picker(L("Aralık"),selection: $range) { ForEach(AnalysisRange.allCases,id: \.self) { Text($0.title).tag($0) } }.pickerStyle(.segmented)
             if provider == "cursor" { empty(L("Cursor proje kırılımı sunmuyor"), detail: L("Bağlı kullanım kaynağı hesap toplamını veriyor. Toplam kullanım geçmişini Geçmiş sekmesinde görebilirsin.")) }
-            else if provider == "antigravity" { empty(L("Antigravity proje tüketimi henüz sunulmuyor"), detail: L("agy context sayaçları hesap tüketimi değildir. Kota geçmişini Geçmiş sekmesinde görebilirsin.")) }
-            else if rows.isEmpty { empty(L("Bu aralıkta yerel token kaydı yok"),detail: L("Claude Code, Codex ve eski Gemini CLI oturumlarının yerel token kayıtları otomatik aktarılır.")) }
+            else if rows.isEmpty { empty(L("Bu aralıkta yerel token kaydı yok"),detail: L("Claude Code, Codex, Antigravity ve eski Gemini CLI oturumlarının yerel token kayıtları otomatik aktarılır.")) }
             else {
                 Text(range == .session ? L("Bu sağlayıcının en son yerel oturumu") : L("Yerel token tüketimi")).font(.headline)
                 ScrollView {
@@ -350,8 +379,10 @@ struct AnalyticsView: View {
                                 HStack { Text(L("Girdi %@ · Çıktı %@ · Önbellek okuma %@%@",DisplayFormat.number(row.input),DisplayFormat.number(row.output),DisplayFormat.number(row.cached),row.cacheWrite > 0 ? L(" · Yazma %@",DisplayFormat.number(row.cacheWrite)) : "")).font(.caption).foregroundStyle(.secondary) }
                             }.padding(12).background(Color.primary.opacity(0.04),in: RoundedRectangle(cornerRadius: 10)).help(row.project)
                         }
-                        Text(L("Tokenlar sağlayıcılar arasında aynı kota veya maliyet anlamına gelmez. Önbellek okuması ayrıca gösterilir; Claude’un ayrı önbellek okuma sayacı toplamın dışında tutulur.")).font(.caption).foregroundStyle(.secondary)
-                        if range != .session { attributionView }
+                        Text(L("Tokenlar sağlayıcılar arasında aynı kota veya maliyet anlamına gelmez. Önbellek okuması ayrıca gösterilir; Claude ve Antigravity’nin ayrı önbellek okuma sayaçları toplamın dışında tutulur.")).font(.caption).foregroundStyle(.secondary)
+                        if provider == "antigravity" {
+                            Text(L("Antigravity toplamı çağrı kayıtlarından hesaplanır; reasoning çıktı içinde sayılır. Proje, oturumun çalışma dizinine göre belirlenir. Kota grubu ile model eşlemesi doğrulanmadığından kota payı tahmini gösterilmez.")).font(.caption).foregroundStyle(.secondary)
+                        } else if range != .session { attributionView }
                     }
                 }
             }

@@ -299,3 +299,32 @@
 "Antigravity proje tüketimi henüz sunulmuyor" = "Antigravity project consumption is not available yet";
 "agy context sayaçları hesap tüketimi değildir. Kota geçmişini Geçmiş sekmesinde görebilirsin." = "agy context counters do not measure account consumption. View quota history in the History tab.";
 "Claude Code, Codex ve eski Gemini CLI oturumlarının yerel token kayıtları otomatik aktarılır." = "Local token records from Claude Code, Codex and legacy Gemini CLI sessions are imported automatically.";
+
+// Claude account connections and Antigravity project analytics
+"Claude hesabı" = "Claude account";
+"Aynı hesaptaki Web, Desktop, Code ve Cowork ortak kotayı kullanır. Ayrı sağlayıcılar olarak tekrar sayılmaz." = "Web, Desktop, Code and Cowork share usage limits on the same account. Their usage is not counted again as separate providers.";
+"Claude bağlantısı" = "Claude connection";
+"Otomatik · Code aktarımı ve OAuth" = "Automatic · Code bridge and OAuth";
+"Claude hesabı · Web girişi" = "Claude account · Web login";
+"Code kimlik bilgileri" = "Code credentials";
+"Claude hesabını bağla" = "Connect Claude account";
+"Code kota aktarımını bağla" = "Connect Code quota bridge";
+"Code bağlantısı hazır: %@. Ayarlar otomatik yenilenir; kota alanları ilk model yanıtından sonra gelir." = "Code bridge ready: %@. Settings reload automatically; quota fields arrive after the first model response.";
+"Çalışma alanı" = "Workspace";
+"Seç" = "Select";
+"Web girişi Kenar’ın kendi oturumunda saklanır; başka tarayıcının çerezleri okunmaz." = "Web login is stored in Kenar’s own session; cookies from other browsers are not read.";
+"Claude hesabını bağla · Kenar" = "Connect Claude account · Kenar";
+"Claude girişi" = "Claude login";
+"Kenar ayarlarından Claude hesabını bağla; web girişini tamamla." = "Connect your Claude account in Kenar Settings and complete the web login.";
+"Claude hesabında çalışma alanını Kenar ayarlarından seç." = "Choose your Claude account workspace in Kenar Settings.";
+"Claude hesabı okunabilir kota verisi döndürmedi." = "Claude account did not return readable quota data.";
+"Claude hesabına bağlanılamadı. Ağ bağlantısını kontrol et." = "Could not connect to Claude account. Check your network connection.";
+"Claude web oturumu sona erdi. Ayarlardan Claude hesabını yeniden bağla." = "Claude web session expired. Reconnect your Claude account in Settings.";
+"Claude web erişimi doğrulama istiyor. Giriş penceresini açıp işlemi tamamla." = "Claude web access requires verification. Open the login window and complete it.";
+"Claude sorgu sınırına ulaşıldı; sonraki yenilemede tekrar denenecek." = "Claude request limit reached; the next refresh will retry.";
+"Claude bağlantısı açık · %d kota penceresi" = "Claude connected · %d quota windows";
+"CLI ayar dosyası okunamadı; değiştirilmedi." = "Could not read CLI settings; the file was left unchanged.";
+"Mevcut özel status line ayarın korunuyor. Kenar bağlantısını eklemek için önce bu ayarı düzenle." = "Your existing custom status line was preserved. Adjust it before adding the Kenar connection.";
+"Claude Code, Codex, Antigravity ve eski Gemini CLI oturumlarının yerel token kayıtları otomatik aktarılır." = "Local token records from Claude Code, Codex, Antigravity and legacy Gemini CLI sessions are imported automatically.";
+"Tokenlar sağlayıcılar arasında aynı kota veya maliyet anlamına gelmez. Önbellek okuması ayrıca gösterilir; Claude ve Antigravity’nin ayrı önbellek okuma sayaçları toplamın dışında tutulur." = "Token counts do not represent the same quota or cost across providers. Cache reads are shown separately; separate Claude and Antigravity cache-read counters are excluded from the total.";
+"Antigravity toplamı çağrı kayıtlarından hesaplanır; reasoning çıktı içinde sayılır. Proje, oturumun çalışma dizinine göre belirlenir. Kota grubu ile model eşlemesi doğrulanmadığından kota payı tahmini gösterilmez." = "Antigravity totals come from generation records; output includes reasoning. Projects use the session workspace. Estimated quota attribution is omitted because quota-bucket to model mapping is unverified.";

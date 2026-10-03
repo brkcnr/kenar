@@ -11,7 +11,7 @@ mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
 lipo -create .build/arm64-apple-macosx/release/Kenar .build/x86_64-apple-macosx/release/Kenar -output "$APP/Contents/MacOS/Kenar"
 cp -R Sources/Kenar/Resources/. "$APP/Contents/Resources/"
 cp assets/AppIcon.icns "$APP/Contents/Resources/"
-cp LICENSE UPSTREAM.md "$APP/Contents/Resources/"
+cp LICENSE UPSTREAM.md THIRD_PARTY_NOTICES.md "$APP/Contents/Resources/"
 cat > "$APP/Contents/Info.plist" <<'PLIST'
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
@@ -19,8 +19,8 @@ cat > "$APP/Contents/Info.plist" <<'PLIST'
 <key>CFBundleName</key><string>Kenar</string>
 <key>CFBundleDisplayName</key><string>Kenar</string>
 <key>CFBundleIdentifier</key><string>local.kenar.usage</string>
-<key>CFBundleVersion</key><string>8</string>
-<key>CFBundleShortVersionString</key><string>1.3.0</string>
+<key>CFBundleVersion</key><string>9</string>
+<key>CFBundleShortVersionString</key><string>1.4.0</string>
 <key>CFBundleExecutable</key><string>Kenar</string>
 <key>CFBundleIconFile</key><string>AppIcon</string>
 <key>CFBundleDevelopmentRegion</key><string>tr</string>

@@ -30,6 +30,8 @@ struct Preferences: Codable {
     var thresholds: [String: [Int]] = ["claude": [75, 90, 100], "codex": [75, 90, 100], "cursor": [75, 90, 100], "antigravity": [75, 90, 100]]
     var hiddenProviders: [String] = []
     var geminiProject: String = ""
+    var claudeSource: String? = nil
+    var claudeWorkspace: String? = nil
     var language: AppLanguage? = nil
 }
 

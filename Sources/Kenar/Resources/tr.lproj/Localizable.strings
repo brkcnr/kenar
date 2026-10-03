@@ -237,3 +237,32 @@
 "Antigravity proje tüketimi henüz sunulmuyor" = "Antigravity proje tüketimi henüz sunulmuyor";
 "agy context sayaçları hesap tüketimi değildir. Kota geçmişini Geçmiş sekmesinde görebilirsin." = "agy context sayaçları hesap tüketimi değildir. Kota geçmişini Geçmiş sekmesinde görebilirsin.";
 "Claude Code, Codex ve eski Gemini CLI oturumlarının yerel token kayıtları otomatik aktarılır." = "Claude Code, Codex ve eski Gemini CLI oturumlarının yerel token kayıtları otomatik aktarılır.";
+
+// Claude account connections and Antigravity project analytics
+"Claude hesabı" = "Claude hesabı";
+"Aynı hesaptaki Web, Desktop, Code ve Cowork ortak kotayı kullanır. Ayrı sağlayıcılar olarak tekrar sayılmaz." = "Aynı hesaptaki Web, Desktop, Code ve Cowork ortak kotayı kullanır. Ayrı sağlayıcılar olarak tekrar sayılmaz.";
+"Claude bağlantısı" = "Claude bağlantısı";
+"Otomatik · Code aktarımı ve OAuth" = "Otomatik · Code aktarımı ve OAuth";
+"Claude hesabı · Web girişi" = "Claude hesabı · Web girişi";
+"Code kimlik bilgileri" = "Code kimlik bilgileri";
+"Claude hesabını bağla" = "Claude hesabını bağla";
+"Code kota aktarımını bağla" = "Code kota aktarımını bağla";
+"Code bağlantısı hazır: %@. Ayarlar otomatik yenilenir; kota alanları ilk model yanıtından sonra gelir." = "Code bağlantısı hazır: %@. Ayarlar otomatik yenilenir; kota alanları ilk model yanıtından sonra gelir.";
+"Çalışma alanı" = "Çalışma alanı";
+"Seç" = "Seç";
+"Web girişi Kenar’ın kendi oturumunda saklanır; başka tarayıcının çerezleri okunmaz." = "Web girişi Kenar’ın kendi oturumunda saklanır; başka tarayıcının çerezleri okunmaz.";
+"Claude hesabını bağla · Kenar" = "Claude hesabını bağla · Kenar";
+"Claude girişi" = "Claude girişi";
+"Kenar ayarlarından Claude hesabını bağla; web girişini tamamla." = "Kenar ayarlarından Claude hesabını bağla; web girişini tamamla.";
+"Claude hesabında çalışma alanını Kenar ayarlarından seç." = "Claude hesabında çalışma alanını Kenar ayarlarından seç.";
+"Claude hesabı okunabilir kota verisi döndürmedi." = "Claude hesabı okunabilir kota verisi döndürmedi.";
+"Claude hesabına bağlanılamadı. Ağ bağlantısını kontrol et." = "Claude hesabına bağlanılamadı. Ağ bağlantısını kontrol et.";
+"Claude web oturumu sona erdi. Ayarlardan Claude hesabını yeniden bağla." = "Claude web oturumu sona erdi. Ayarlardan Claude hesabını yeniden bağla.";
+"Claude web erişimi doğrulama istiyor. Giriş penceresini açıp işlemi tamamla." = "Claude web erişimi doğrulama istiyor. Giriş penceresini açıp işlemi tamamla.";
+"Claude sorgu sınırına ulaşıldı; sonraki yenilemede tekrar denenecek." = "Claude sorgu sınırına ulaşıldı; sonraki yenilemede tekrar denenecek.";
+"Claude bağlantısı açık · %d kota penceresi" = "Claude bağlantısı açık · %d kota penceresi";
+"CLI ayar dosyası okunamadı; değiştirilmedi." = "CLI ayar dosyası okunamadı; değiştirilmedi.";
+"Mevcut özel status line ayarın korunuyor. Kenar bağlantısını eklemek için önce bu ayarı düzenle." = "Mevcut özel status line ayarın korunuyor. Kenar bağlantısını eklemek için önce bu ayarı düzenle.";
+"Claude Code, Codex, Antigravity ve eski Gemini CLI oturumlarının yerel token kayıtları otomatik aktarılır." = "Claude Code, Codex, Antigravity ve eski Gemini CLI oturumlarının yerel token kayıtları otomatik aktarılır.";
+"Tokenlar sağlayıcılar arasında aynı kota veya maliyet anlamına gelmez. Önbellek okuması ayrıca gösterilir; Claude ve Antigravity’nin ayrı önbellek okuma sayaçları toplamın dışında tutulur." = "Tokenlar sağlayıcılar arasında aynı kota veya maliyet anlamına gelmez. Önbellek okuması ayrıca gösterilir; Claude ve Antigravity’nin ayrı önbellek okuma sayaçları toplamın dışında tutulur.";
+"Antigravity toplamı çağrı kayıtlarından hesaplanır; reasoning çıktı içinde sayılır. Proje, oturumun çalışma dizinine göre belirlenir. Kota grubu ile model eşlemesi doğrulanmadığından kota payı tahmini gösterilmez." = "Antigravity toplamı çağrı kayıtlarından hesaplanır; reasoning çıktı içinde sayılır. Proje, oturumun çalışma dizinine göre belirlenir. Kota grubu ile model eşlemesi doğrulanmadığından kota payı tahmini gösterilmez.";
