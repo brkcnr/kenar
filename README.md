@@ -52,7 +52,11 @@ Kenar reads existing CLI logins; it does not create accounts or change the tools
 | Cursor | Cursor CLI login via `cursor-agent login` | Account totals; reliable project breakdown is unavailable from this source |
 | Gemini | Gemini CLI login with a Google account | Local JSON and JSONL session records |
 
-**Claude:** opening Claude Desktop alone does not establish a Claude Code login. Run `/login` in Claude Code when necessary. If Kenar needs Keychain access, expand Claude's details and select **Retry connection**. Automatic reads do not open an interactive Keychain dialog; a manual retry can request access to the existing Claude Code login. Missing, expired, unreadable, and blocked credentials are reported separately.
+**Claude:** opening Claude Desktop alone does not establish a Claude Code login. Run `/login` in Claude Code when necessary. If Kenar needs Keychain access, expand Claude's details and select **Retry connection**, then choose **Always Allow** in the macOS dialog to grant ongoing access to Kenar. Choosing **Allow** grants only that read. Automatic reads explicitly disable Keychain permission dialogs.
+
+When Claude's connection is blocked by unavailable or expired credentials, Kenar checks the local credential source silently every five seconds. Once Claude Code renews the login and macOS permits access, Kenar fetches Claude's quotas automatically without a manual retry. These probes do not launch Claude Code or send API requests until usable credentials are available. Rejected tokens are not repeatedly retried; normal API errors and rate limits retain their existing refresh/backoff behavior. Missing, expired, unreadable, and blocked credentials are reported separately.
+
+Ad-hoc app signatures change when the app is rebuilt, so macOS may ask for access again after installing a new build. **Always Allow** applies to the app identity macOS approved; Kenar does not change the credential item's access controls.
 
 **Gemini:** model names and quotas come from your account's response; no model generation is hardcoded. If Kenar cannot determine the Google Cloud project, enter the project ID used by Gemini CLI in Settings. When several quotas share a model and measurement type, Kenar shows the most constrained one and its reset time.
 
@@ -83,14 +87,14 @@ See [SECURITY.md](SECURITY.md) for credential handling and endpoint limitations.
 
 ## Development and verification
 
-No external Swift package dependencies are required. Run:
+No external Swift package dependencies are required. The scripts preserve the native SwiftPM output layout. Set `KENAR_SDK` to an installed SDK path when your toolchain needs an SDK override (for example, an older SDK if Command Line Tools lacks the new SwiftUI macro plugin). Run:
 
 ```sh
 bash test.sh
 bash build.sh
 ```
 
-`test.sh` uses XCTest with full Xcode, or a standalone assertion runner for the same scenarios when only Command Line Tools are installed. The current suite contains **40 scenarios**. `build.sh` compiles both architectures, combines them into a universal app, signs it ad hoc, and verifies the disk image.
+`test.sh` uses XCTest with full Xcode, or a standalone assertion runner for the same scenarios when only Command Line Tools are installed. The current suite contains **44 scenarios**. `build.sh` compiles both architectures, combines them into a universal app, signs it ad hoc, and verifies the disk image.
 
 Inspect a live provider connection without printing tokens or raw response bodies:
 

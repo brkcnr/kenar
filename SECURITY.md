@@ -21,7 +21,9 @@ Analytics records contain quota values, timestamps, provider/model identifiers, 
 
 ## Claude Keychain access
 
-Automatic Claude reads are noninteractive. A manual connection retry can show macOS's permission dialog for the existing Claude Code credential item. Kenar does not alter the item's access control list or unlock the Keychain itself. Read failures are distinguished from missing and expired logins, and unsuccessful reads are not negatively cached.
+Automatic Claude reads set both `LAContext.interactionNotAllowed` and `kSecUseAuthenticationUIFail` so a legacy macOS Keychain permission dialog cannot appear in the background. A manual connection retry can show macOS's permission dialog for the existing Claude Code credential item. Kenar does not alter the item's access control list or unlock the Keychain itself. Read failures are distinguished from missing and expired logins, and unsuccessful reads are not negatively cached.
+
+For ongoing access, choose **Always Allow** in the macOS dialog rather than **Allow**. An ad-hoc rebuild can change the app identity and require permission again. A blocked or expired login is checked locally every five seconds; only a usable credential triggers a quota request. An access token rejected with HTTP 401 is excluded until Claude Code supplies a different one. These probes never launch Claude Code, modify its settings, or refresh its tokens.
 
 ## Limitations and reporting
 

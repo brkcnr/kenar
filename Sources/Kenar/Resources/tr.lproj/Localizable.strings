@@ -218,9 +218,9 @@
 // Claude connection recovery
 "Retry connection" = "Bağlantıyı yeniden dene";
 "Claude Code login not found — run /login in Claude Code. Opening Claude Desktop alone does not connect Kenar." = "Claude Code oturumu bulunamadı — Claude Code’da /login çalıştır. Yalnızca Claude masaüstü uygulamasını açmak Kenar’ı bağlamaz.";
-"Claude Code access token expired — run /usage in Claude Code, then retry the connection." = "Claude Code erişim belirtecinin süresi dolmuş — Claude Code’da /usage çalıştır, ardından bağlantıyı yeniden dene.";
+"Claude Code access token expired — run /usage in Claude Code, then retry the connection." = "Claude Code oturumu eskimiş — yenilemek için Claude Code’u aç. Kenar otomatik bağlanacak.";
 "Claude Code login could not be read — check /status in Claude Code." = "Claude Code oturumu okunamadı — Claude Code’da /status ile kontrol et.";
-"Keychain access is required — unlock your Mac, then retry and allow Kenar to read the Claude Code login." = "Keychain erişimi gerekli — Mac’in kilidini aç, ardından yeniden dene ve Kenar’ın Claude Code oturumunu okumasına izin ver.";
-"macOS blocked access to the Claude Code login — retry and approve the Keychain request for Kenar." = "macOS, Claude Code oturumuna erişimi engelledi — yeniden dene ve Kenar için Keychain erişim isteğini onayla.";
+"Keychain access is required — unlock your Mac, then retry and allow Kenar to read the Claude Code login." = "Bir kez yeniden dene ve macOS Keychain penceresinde Her Zaman İzin Ver’i seç.";
+"macOS blocked access to the Claude Code login — retry and approve the Keychain request for Kenar." = "macOS, Claude oturumuna erişimi engelledi. Yeniden dene ve Keychain penceresinde Her Zaman İzin Ver’i seç.";
 "Claude Code Keychain error (%d) — retry the connection." = "Claude Code Keychain hatası (%d) — bağlantıyı yeniden dene.";
 "Retry %@ connection" = "%@ bağlantısını yeniden dene";

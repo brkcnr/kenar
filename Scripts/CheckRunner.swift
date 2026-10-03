@@ -42,7 +42,11 @@ import Foundation
         do { try suite.setUpWithError(); suite.testClaudeExpiredAndMalformedCredentialsStayDistinct(); try suite.tearDownWithError(); print("CHECK: testClaudeExpiredAndMalformedCredentialsStayDistinct") } catch { CheckSupport.fail("testClaudeExpiredAndMalformedCredentialsStayDistinct: \(error)") }
         do { try suite.setUpWithError(); try suite.testClaudeFailedExplicitCheckCannotReviveOldCache(); try suite.tearDownWithError(); print("CHECK: testClaudeFailedExplicitCheckCannotReviveOldCache") } catch { CheckSupport.fail("testClaudeFailedExplicitCheckCannotReviveOldCache: \(error)") }
         do { try suite.setUpWithError(); try await suite.testRetryOnlyFetchesSelectedProviderWithInteractiveIntent(); try suite.tearDownWithError(); print("CHECK: testRetryOnlyFetchesSelectedProviderWithInteractiveIntent") } catch { CheckSupport.fail("testRetryOnlyFetchesSelectedProviderWithInteractiveIntent: \(error)") }
-        print("\(CheckSupport.failures == 0 ? "PASS" : "FAIL"): 40 scenarios, \(CheckSupport.failures) failures")
+        do { try suite.setUpWithError(); suite.testClaudeBackgroundKeychainReadCannotShowPermissionUI(); try suite.tearDownWithError(); print("CHECK: testClaudeBackgroundKeychainReadCannotShowPermissionUI") } catch { CheckSupport.fail("testClaudeBackgroundKeychainReadCannotShowPermissionUI: \(error)") }
+        do { try suite.setUpWithError(); try suite.testClaudeRejectedTokenWaitsForRotationWithoutInteraction(); try suite.tearDownWithError(); print("CHECK: testClaudeRejectedTokenWaitsForRotationWithoutInteraction") } catch { CheckSupport.fail("testClaudeRejectedTokenWaitsForRotationWithoutInteraction: \(error)") }
+        do { try suite.setUpWithError(); try await suite.testClaudeAutomaticRecoveryIsSilentAndProviderSpecific(); try suite.tearDownWithError(); print("CHECK: testClaudeAutomaticRecoveryIsSilentAndProviderSpecific") } catch { CheckSupport.fail("testClaudeAutomaticRecoveryIsSilentAndProviderSpecific: \(error)") }
+        do { try suite.setUpWithError(); try await suite.testClaudeRecoveryDoesNotPollHealthyOrRateLimitedAccounts(); try suite.tearDownWithError(); print("CHECK: testClaudeRecoveryDoesNotPollHealthyOrRateLimitedAccounts") } catch { CheckSupport.fail("testClaudeRecoveryDoesNotPollHealthyOrRateLimitedAccounts: \(error)") }
+        print("\(CheckSupport.failures == 0 ? "PASS" : "FAIL"): 44 scenarios, \(CheckSupport.failures) failures")
         exit(CheckSupport.failures == 0 ? 0 : 1)
     }
 }

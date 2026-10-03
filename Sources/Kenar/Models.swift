@@ -47,6 +47,7 @@ struct ProviderSnapshot: Identifiable {
     var isDemo = false
     var accent: Color? = nil
     var updatedAt: Date? = nil
+    var needsCredentialRecovery = false
     var primary: UsageWindow? { windows.first }
     var isStale: Bool { !isDemo && (error != nil || (updatedAt.map { Date().timeIntervalSince($0) > 300 } ?? false)) }
     func hasActiveConnection(at now: Date = Date()) -> Bool {
@@ -80,8 +81,13 @@ extension UsageProvider {
     private var timer: Timer?
     private var deadlineTimer: Timer?
     private var resetAttempts: [String: Date] = [:]
-    init(providers: [UsageProvider], analytics: AnalyticsStore?) {
+    private let credentialProbe: @Sendable () -> Bool
+    private(set) var probingCredentials = false
+    private var lastCredentialProbe: Date = .distantPast
+    init(providers: [UsageProvider], analytics: AnalyticsStore?,
+         credentialProbe: @escaping @Sendable () -> Bool = { ClaudeProvider.canRecoverConnection() }) {
         self.providers = providers; self.analytics = analytics
+        self.credentialProbe = credentialProbe
         snapshots = providers.map { ProviderSnapshot(id: $0.id, name: $0.id == "claude" ? "Claude" : $0.id.capitalized, systemImage: "circle", windows: [], error: nil) }
         if analytics == nil && !Preview.isEnabled { storageError = L("Yerel veritabanı açılamadı; geçmiş kaydedilmiyor.") }
     }
@@ -102,6 +108,7 @@ extension UsageProvider {
     }
     private func checkResets() {
         let now = Date()
+        checkCredentialRecovery(at: now)
         updateConnectionHealth(at: now)
         for snap in snapshots where !snap.isDemo {
             for window in snap.windows {
@@ -110,6 +117,20 @@ extension UsageProvider {
                     resetAttempts[key] = now; refreshAll(); return
                 }
             }
+        }
+    }
+    func checkCredentialRecovery(at now: Date = Date()) {
+        guard !Preview.isEnabled, !isRefreshing, !probingCredentials,
+              now.timeIntervalSince(lastCredentialProbe) >= 5,
+              snapshots.contains(where: { $0.id == "claude" && $0.needsCredentialRecovery }) else { return }
+        lastCredentialProbe = now; probingCredentials = true
+        let probe = credentialProbe
+        Task {
+            let available = await Task.detached(priority: .utility) { probe() }.value
+            probingCredentials = false
+            guard available, !isRefreshing,
+                  snapshots.contains(where: { $0.id == "claude" && $0.needsCredentialRecovery }) else { return }
+            refresh(providerID: "claude", userInitiated: false)
         }
     }
     static func merging(_ fresh: ProviderSnapshot, with previous: ProviderSnapshot?) -> ProviderSnapshot {

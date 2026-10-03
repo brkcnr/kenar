@@ -4,13 +4,9 @@ cd "$(dirname "$0")"
 APP_NAME="Kenar"
 DIST="${KENAR_DIST:-dist}"
 APP="$DIST/$APP_NAME.app"
-SWIFT_MODULECACHE_PATH="$(pwd)/.build/module-cache"
-export SWIFT_MODULECACHE_PATH
-CLANG_MODULE_CACHE_PATH="$SWIFT_MODULECACHE_PATH"
-export CLANG_MODULE_CACHE_PATH
-mkdir -p "$SWIFT_MODULECACHE_PATH"
-swift build --disable-sandbox --cache-path .build/cache -c release --triple arm64-apple-macosx
-swift build --disable-sandbox --cache-path .build/cache -c release --triple x86_64-apple-macosx
+source Scripts/SwiftEnvironment.sh
+swift build "${SWIFT_PACKAGE_ARGS[@]}" --disable-sandbox --cache-path .build/cache -c release --triple arm64-apple-macosx
+swift build "${SWIFT_PACKAGE_ARGS[@]}" --disable-sandbox --cache-path .build/cache -c release --triple x86_64-apple-macosx
 mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
 lipo -create .build/arm64-apple-macosx/release/Kenar .build/x86_64-apple-macosx/release/Kenar -output "$APP/Contents/MacOS/Kenar"
 cp -R Sources/Kenar/Resources/. "$APP/Contents/Resources/"
@@ -23,8 +19,8 @@ cat > "$APP/Contents/Info.plist" <<'PLIST'
 <key>CFBundleName</key><string>Kenar</string>
 <key>CFBundleDisplayName</key><string>Kenar</string>
 <key>CFBundleIdentifier</key><string>local.kenar.usage</string>
-<key>CFBundleVersion</key><string>6</string>
-<key>CFBundleShortVersionString</key><string>1.2.2</string>
+<key>CFBundleVersion</key><string>7</string>
+<key>CFBundleShortVersionString</key><string>1.2.3</string>
 <key>CFBundleExecutable</key><string>Kenar</string>
 <key>CFBundleIconFile</key><string>AppIcon</string>
 <key>CFBundleDevelopmentRegion</key><string>tr</string>

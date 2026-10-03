@@ -48,6 +48,7 @@ final class ClaudeCredentialStore {
     private let readKeychain: (Bool) -> KeychainRead
     private var memory: ClaudeProvider.Credentials?
     private var sourceNeedsRead = false
+    private var rejectedAccessToken: String?
 
     init(sourceURL: URL, cacheURL: URL,
          readFile: @escaping (URL) -> Data? = { try? Data(contentsOf: $0) },
@@ -60,7 +61,7 @@ final class ClaudeCredentialStore {
               now: Date = Date()) -> Result<ClaudeProvider.Credentials, Failure> {
         lock.lock(); defer { lock.unlock() }
         func usable(_ creds: ClaudeProvider.Credentials) -> Bool {
-            creds.expiresAt.map { $0.timeIntervalSince(now) >= 30 } ?? true
+            creds.accessToken != rejectedAccessToken && (creds.expiresAt.map { $0.timeIntervalSince(now) >= 30 } ?? true)
         }
         if !forceSourceRead && !sourceNeedsRead {
             if let memory, usable(memory) { return .success(memory) }
@@ -91,20 +92,28 @@ final class ClaudeCredentialStore {
         return .failure(failure)
     }
 
-    func invalidate() {
+    func invalidate(rejectedAccessToken: String? = nil) {
         lock.lock(); defer { lock.unlock() }; memory = nil; sourceNeedsRead = true
+        if let rejectedAccessToken { self.rejectedAccessToken = rejectedAccessToken }
     }
 
-    private static func readKeychain(allowInteraction: Bool) -> KeychainRead {
+    static func keychainQuery(allowInteraction: Bool) -> [String: Any] {
         let context = LAContext()
         context.interactionNotAllowed = !allowInteraction
-        let query: [String: Any] = [
+        return [
             kSecClass as String: kSecClassGenericPassword,
             kSecAttrService as String: "Claude Code-credentials",
             kSecReturnData as String: true,
             kSecMatchLimit as String: kSecMatchLimitOne,
             kSecUseAuthenticationContext as String: context,
+            // LAContext alone does not suppress legacy macOS Keychain ACL
+            // dialogs. Explicitly fail rather than prompting in the background.
+            kSecUseAuthenticationUI as String: allowInteraction ? kSecUseAuthenticationUIAllow : kSecUseAuthenticationUIFail,
         ]
+    }
+
+    private static func readKeychain(allowInteraction: Bool) -> KeychainRead {
+        let query = keychainQuery(allowInteraction: allowInteraction)
         var item: CFTypeRef?
         let status = SecItemCopyMatching(query as CFDictionary, &item)
         return KeychainRead(data: status == errSecSuccess ? item as? Data : nil, status: status)

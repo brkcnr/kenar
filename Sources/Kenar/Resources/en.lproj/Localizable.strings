@@ -280,9 +280,9 @@
 // Claude connection recovery
 "Retry connection" = "Retry connection";
 "Claude Code login not found — run /login in Claude Code. Opening Claude Desktop alone does not connect Kenar." = "Claude Code login not found — run /login in Claude Code. Opening Claude Desktop alone does not connect Kenar.";
-"Claude Code access token expired — run /usage in Claude Code, then retry the connection." = "Claude Code access token expired — run /usage in Claude Code, then retry the connection.";
+"Claude Code access token expired — run /usage in Claude Code, then retry the connection." = "Claude Code login expired — open Claude Code to renew it. Kenar will reconnect automatically.";
 "Claude Code login could not be read — check /status in Claude Code." = "Claude Code login could not be read — check /status in Claude Code.";
-"Keychain access is required — unlock your Mac, then retry and allow Kenar to read the Claude Code login." = "Keychain access is required — unlock your Mac, then retry and allow Kenar to read the Claude Code login.";
-"macOS blocked access to the Claude Code login — retry and approve the Keychain request for Kenar." = "macOS blocked access to the Claude Code login — retry and approve the Keychain request for Kenar.";
+"Keychain access is required — unlock your Mac, then retry and allow Kenar to read the Claude Code login." = "Retry once and choose Always Allow in the macOS Keychain dialog to keep Kenar connected.";
+"macOS blocked access to the Claude Code login — retry and approve the Keychain request for Kenar." = "macOS blocked the Claude login. Retry and choose Always Allow in the Keychain dialog.";
 "Claude Code Keychain error (%d) — retry the connection." = "Claude Code Keychain error (%d) — retry the connection.";
 "Retry %@ connection" = "Retry %@ connection";

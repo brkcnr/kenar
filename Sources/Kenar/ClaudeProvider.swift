@@ -57,6 +57,7 @@ struct ClaudeProvider: UsageProvider {
         case .success(let value): creds = value
         case .failure(let failure):
             snap.error = failure.message
+            snap.needsCredentialRecovery = true
             return snap
         }
 
@@ -66,14 +67,16 @@ struct ClaudeProvider: UsageProvider {
             if status == 401 {
                 // Claude Code rotated its token: drop our cache, re-read its store
                 // (Keychain / file) and retry once right away.
-                Self.clearOwnCopy()
+                Self.clearOwnCopy(rejectedAccessToken: activeToken)
                 if case .success(let fresh) = Self.credentials(forceSourceRead: true, allowInteraction: userInitiated), fresh.accessToken != creds.accessToken {
                     activeToken = fresh.accessToken
                     (data, status, response) = try await Self.requestUsage(token: activeToken)
                 }
             }
             if status == 401 {
+                Self.clearOwnCopy(rejectedAccessToken: activeToken)
                 snap.error = L("Unauthorized — open Claude Code once to refresh login")
+                snap.needsCredentialRecovery = true
                 return snap
             }
             if status == 429 {
@@ -255,9 +258,16 @@ struct ClaudeProvider: UsageProvider {
         try? FileManager.default.setAttributes([.posixPermissions: 0o600], ofItemAtPath: ownStoreURL.path)
     }
 
-    static func clearOwnCopy() {
-        ClaudeCredentialStore.shared.invalidate()
+    static func clearOwnCopy(rejectedAccessToken: String? = nil) {
+        ClaudeCredentialStore.shared.invalidate(rejectedAccessToken: rejectedAccessToken)
         try? FileManager.default.removeItem(at: ownStoreURL)
+    }
+
+    /// Probe only the local credential source. No dialog or network request;
+    /// quota fetching resumes once Claude Code provides a usable login.
+    static func canRecoverConnection() -> Bool {
+        if case .success = ClaudeCredentialStore.shared.load(forceSourceRead: true, allowInteraction: false) { return true }
+        return false
     }
 
     static func parseCredentialsJSON(_ data: Data) -> Credentials? {

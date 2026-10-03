@@ -72,6 +72,62 @@ final class KenarTests: XCTestCase {
         XCTAssertEqual(ClaudeCredentialStore.Failure.keychainStatus(-9999), .keychainError(-9999))
         XCTAssertNotEqual(ClaudeCredentialStore.Failure.accessRequired.message, ClaudeCredentialStore.Failure.notFound.message)
     }
+    func testClaudeBackgroundKeychainReadCannotShowPermissionUI() {
+        let quiet = ClaudeCredentialStore.keychainQuery(allowInteraction: false)
+        let manual = ClaudeCredentialStore.keychainQuery(allowInteraction: true)
+        XCTAssertEqual(quiet[kSecUseAuthenticationUI as String] as? String, kSecUseAuthenticationUIFail as String)
+        XCTAssertEqual(manual[kSecUseAuthenticationUI as String] as? String, kSecUseAuthenticationUIAllow as String)
+    }
+    func testClaudeRejectedTokenWaitsForRotationWithoutInteraction() throws {
+        let source = dir.appendingPathComponent("source"), cache = dir.appendingPathComponent("cache")
+        let old = data(#"{"claudeAiOauth":{"accessToken":"rejected-access","expiresAt":9999999999999}}"#)
+        let fresh = data(#"{"claudeAiOauth":{"accessToken":"rotated-access","expiresAt":9999999999999}}"#)
+        var current = old, interaction = [Bool]()
+        let store = ClaudeCredentialStore(sourceURL: source, cacheURL: cache, readFile: { $0 == cache ? old : nil }, readKeychain: { allow in
+            interaction.append(allow); return .init(data: current, status: errSecSuccess)
+        })
+        XCTAssertEqual(try store.load().get().accessToken, "rejected-access")
+        store.invalidate(rejectedAccessToken: "rejected-access")
+        for _ in 0..<2 {
+            if case .failure = store.load(forceSourceRead: true) {} else { XCTAssertTrue(false, "HTTP 401 tokens must not trigger repeated quota requests") }
+        }
+        current = fresh
+        XCTAssertEqual(try store.load(forceSourceRead: true).get().accessToken, "rotated-access")
+        XCTAssertEqual(interaction, [false, false, false])
+        XCTAssertEqual(try store.load().get().accessToken, "rotated-access")
+    }
+    @MainActor func testClaudeAutomaticRecoveryIsSilentAndProviderSpecific() async throws {
+        let probe = RecoveryProbeSpy(), claude = RetryProviderSpy(id: "claude"), codex = RetryProviderSpy(id: "codex")
+        let store = UsageStore(providers: [claude, codex], analytics: nil, credentialProbe: { probe.read() })
+        var failed = snapshot(12, id: "claude")
+        failed.error = "Keychain blocked"; failed.needsCredentialRecovery = true
+        store.snapshots = [failed, snapshot(39)]
+        let now = Date()
+        store.checkCredentialRecovery(at: now)
+        store.checkCredentialRecovery(at: now) // no overlapping probes
+        for _ in 0..<100 where store.probingCredentials || store.isRefreshing { try await Task.sleep(nanoseconds: 1_000_000) }
+        XCTAssertEqual(probe.count, 1)
+        let initial = await claude.calls(); XCTAssertEqual(initial, [])
+        probe.available = true
+        store.checkCredentialRecovery(at: now.addingTimeInterval(4))
+        XCTAssertEqual(probe.count, 1)
+        store.checkCredentialRecovery(at: now.addingTimeInterval(5))
+        for _ in 0..<100 where store.probingCredentials || store.isRefreshing { try await Task.sleep(nanoseconds: 1_000_000) }
+        let recovered = await claude.calls(), unrelated = await codex.calls()
+        XCTAssertEqual(recovered, [false]); XCTAssertEqual(unrelated, [])
+        XCTAssertEqual(probe.count, 2)
+        XCTAssertEqual(store.snapshots.first?.windows.first?.usedPercent, 12) // retain stale values on an API failure
+    }
+    @MainActor func testClaudeRecoveryDoesNotPollHealthyOrRateLimitedAccounts() async throws {
+        let probe = RecoveryProbeSpy(), store = UsageStore(providers: [], analytics: nil, credentialProbe: { probe.read() })
+        var claude = snapshot(12, id: "claude")
+        for error in [nil, "Rate limited", "Offline"] as [String?] {
+            claude.error = error; store.snapshots = [claude]
+            store.checkCredentialRecovery()
+        }
+        await Task.yield()
+        XCTAssertEqual(probe.count, 0)
+    }
     func testClaudeLoginRecoveryHasNoNegativeCache() throws {
         let now = Date(), fixture = data(#"{"claudeAiOauth":{"accessToken":"fixture-access","expiresAt":9999999999999}}"#)
         var available = false, reads = 0, interaction = [Bool]()
@@ -455,4 +511,15 @@ private actor RetryProviderSpy: UsageProvider {
         return ProviderSnapshot(id: id, name: id, systemImage: "circle", windows: [], error: "fixture offline")
     }
     func calls() -> [Bool] { intents }
+}
+
+private final class RecoveryProbeSpy: @unchecked Sendable {
+    private let lock = NSLock()
+    private var enabled = false, reads = 0
+    var available: Bool {
+        get { lock.lock(); defer { lock.unlock() }; return enabled }
+        set { lock.lock(); defer { lock.unlock() }; enabled = newValue }
+    }
+    var count: Int { lock.lock(); defer { lock.unlock() }; return reads }
+    func read() -> Bool { lock.lock(); defer { lock.unlock() }; reads += 1; return enabled }
 }
