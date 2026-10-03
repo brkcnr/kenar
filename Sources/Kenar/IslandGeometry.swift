@@ -53,7 +53,7 @@ struct ProviderGlyph: View {
     }()
     var body: some View {
         Group {
-            if id == "gemini" {
+            if id == "gemini" || id == "antigravity" {
                 GeminiSparkle().fill(.primary)
             } else if let image = Self.images[id == "codex" ? "openai" : id] {
                 Image(nsImage:image)

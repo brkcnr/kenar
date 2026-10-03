@@ -194,6 +194,7 @@ struct SettingsView: View {
     @State private var login = LaunchAtLogin.isEnabled
     @State private var loginError: String?
     @State private var tab = 0
+    @State private var agySetupMessage: String?
     var body: some View {
         VStack(alignment: .leading, spacing: 18) {
             HStack { VStack(alignment: .leading) { Text(L("Kenar Ayarları")).font(.title2.weight(.semibold)); Text(L("Paneli çalışma biçimine göre düzenle.")).foregroundStyle(.secondary) }; Spacer() }
@@ -241,7 +242,7 @@ struct SettingsView: View {
             Toggle(L("Kullanım uyarıları"),isOn: $settings.values.notifications).onChange(of: settings.values.notifications) { _ in Notifier.shared.preferencesChanged() }
             Toggle(L("Yenilenme zamanı bildirimi"),isOn: $settings.values.resetNotifications).onChange(of: settings.values.resetNotifications) { _ in Notifier.shared.preferencesChanged() }
             Text(L("Her eşik, aynı kota döneminde yalnızca bir kez bildirilir.")).font(.caption).foregroundStyle(.secondary)
-            ForEach(["codex","claude","cursor","gemini"],id: \.self) { id in
+            ForEach(["codex","claude","cursor","antigravity"],id: \.self) { id in
                 VStack(alignment: .leading,spacing: 6) {
                     Text(id.capitalized).fontWeight(.semibold)
                     HStack {
@@ -259,13 +260,19 @@ struct SettingsView: View {
     }
     private var providers: some View {
         VStack(alignment: .leading,spacing: 16) {
-            ForEach(["codex","claude","cursor","gemini"],id: \.self) { id in
+            ForEach(["codex","claude","cursor","antigravity"],id: \.self) { id in
                 Toggle(L("%@ göster",id.capitalized),isOn: Binding(get: { !settings.values.hiddenProviders.contains(id) },set: { enabled in settings.values.hiddenProviders.removeAll { $0 == id }; if !enabled { settings.values.hiddenProviders.append(id) } }))
             }
             Divider()
-            Text("Gemini CLI").fontWeight(.semibold)
-            TextField(L("Google Cloud proje kimliği (isteğe bağlı)"),text: $settings.values.geminiProject)
-            Text(L("Google hesabıyla giriş gerekir. Proje kimliği otomatik bulunamazsa CLI’de kullandığın kimliği gir.")).font(.caption).foregroundStyle(.secondary)
+            Text("Antigravity CLI · agy").fontWeight(.semibold)
+            Text(L("agy kota verisi yerel status line bağlantısından alınır; Google oturumuna erişilmez.")).font(.caption).foregroundStyle(.secondary)
+            Button(L("Antigravity’yi bağla")) {
+                do {
+                    let launcher = try AntigravityIntegration.install(executable: Bundle.main.executableURL!)
+                    agySetupMessage = L("Açık agy oturumunda çalıştır: /statusline %@. Ardından /usage ile kotayı yenile.", launcher.path)
+                } catch { agySetupMessage = error.localizedDescription }
+            }
+            if let agySetupMessage { Text(agySetupMessage).font(.caption).textSelection(.enabled) }
             Text(L("Tokenlar yalnızca ilgili sağlayıcıya gönderilir. CLI oturumları değiştirilmez; süresi dolan oturum ilgili CLI’de yenilenir.")).font(.caption).foregroundStyle(.secondary)
             Divider()
             Text(L("Brink temelinde geliştirilmiştir · MIT lisansı")).font(.caption)
@@ -293,7 +300,7 @@ struct AnalyticsView: View {
         VStack(alignment: .leading,spacing: 18) {
             HStack { VStack(alignment: .leading,spacing: 4) { Text(L("Kullanım ve Projeler")).font(.title2.weight(.semibold)); Text(L("Hesap kotası ve bu Mac’teki token tüketimi")).foregroundStyle(.secondary) }; Spacer(); if loading { ProgressView().controlSize(.small) } }
             HStack {
-                Picker(L("Sağlayıcı"),selection: $provider) { Text("Codex").tag("codex"); Text("Claude").tag("claude"); Text("Cursor").tag("cursor"); Text("Gemini").tag("gemini") }.frame(width: 180)
+                Picker(L("Sağlayıcı"),selection: $provider) { Text("Codex").tag("codex"); Text("Claude").tag("claude"); Text("Cursor").tag("cursor"); Text("Antigravity").tag("antigravity"); Text("Gemini (legacy)").tag("gemini") }.frame(width: 180)
                 Spacer()
                 Picker(L("Görünüm"),selection: $tab) { Text(L("Geçmiş")).tag(0); Text(L("Proje analizi")).tag(1) }.pickerStyle(.segmented).frame(width: 240)
             }
@@ -330,7 +337,8 @@ struct AnalyticsView: View {
         VStack(alignment: .leading,spacing: 14) {
             Picker(L("Aralık"),selection: $range) { ForEach(AnalysisRange.allCases,id: \.self) { Text($0.title).tag($0) } }.pickerStyle(.segmented)
             if provider == "cursor" { empty(L("Cursor proje kırılımı sunmuyor"), detail: L("Bağlı kullanım kaynağı hesap toplamını veriyor. Toplam kullanım geçmişini Geçmiş sekmesinde görebilirsin.")) }
-            else if rows.isEmpty { empty(L("Bu aralıkta yerel token kaydı yok"),detail: L("Claude Code, Codex veya Gemini CLI’nin bu Mac’te kaydettiği oturumlar otomatik aktarılır.")) }
+            else if provider == "antigravity" { empty(L("Antigravity proje tüketimi henüz sunulmuyor"), detail: L("agy context sayaçları hesap tüketimi değildir. Kota geçmişini Geçmiş sekmesinde görebilirsin.")) }
+            else if rows.isEmpty { empty(L("Bu aralıkta yerel token kaydı yok"),detail: L("Claude Code, Codex ve eski Gemini CLI oturumlarının yerel token kayıtları otomatik aktarılır.")) }
             else {
                 Text(range == .session ? L("Bu sağlayıcının en son yerel oturumu") : L("Yerel token tüketimi")).font(.headline)
                 ScrollView {

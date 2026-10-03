@@ -10,7 +10,7 @@ import AppKit
         L10n.override = Settings.shared.language.rawValue
         let analytics = Preview.isEnabled ? nil : AnalyticsStore(url: AppPaths.support.appendingPathComponent("analytics.sqlite"))
         if let analytics { indexer = TranscriptIndexer(store: analytics) }
-        store = UsageStore(providers: [CodexProvider(),ClaudeProvider(),CursorProvider(),GeminiProvider()],analytics: analytics)
+        store = UsageStore(providers: [CodexProvider(),ClaudeProvider(),CursorProvider(),AntigravityProvider()],analytics: analytics)
         controller = PanelController(store: store,settings: .shared)
         Notifier.shared.requestAuthorizationIfNeeded()
         store.startAutoRefresh()
@@ -29,6 +29,22 @@ import AppKit
 
 @main enum KenarApplication {
     @MainActor static func main() {
+        if CommandLine.arguments.contains("--antigravity-statusline") {
+            var data = Data()
+            while let chunk = try? FileHandle.standardInput.read(upToCount: 65536), !chunk.isEmpty {
+                data.append(chunk)
+                if data.count > 2 * 1024 * 1024 { return }
+            }
+            _ = try? AntigravitySample.receive(data, directory: AppPaths.support)
+            return
+        }
+        if CommandLine.arguments.contains("--connect-antigravity") {
+            do {
+                let launcher = try AntigravityIntegration.install(executable: Bundle.main.executableURL!)
+                print("Connected. In an already-running agy session, run: /statusline \(launcher.path)")
+            } catch { fputs("\(error.localizedDescription)\n", stderr); exit(1) }
+            return
+        }
         let app = NSApplication.shared
         app.setActivationPolicy(.accessory)
         let delegate = AppDelegate()

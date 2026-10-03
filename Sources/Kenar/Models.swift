@@ -57,7 +57,7 @@ struct ProviderSnapshot: Identifiable {
         return now.timeIntervalSince(updatedAt) <= 300
     }
     var color: Color { switch id { case "claude": return UsageColor.claudeOrange; case "codex": return .teal; case "cursor": return .purple; default: return .blue } }
-    var initial: String { switch id { case "claude": return "A"; case "cursor": return "U"; case "gemini": return "G"; default: return "C" } }
+    var initial: String { switch id { case "claude": return "A"; case "cursor": return "U"; case "gemini", "antigravity": return "G"; default: return "C" } }
 }
 enum UsageColor { static let claudeOrange = Color(red: 0.94, green: 0.56, blue: 0.32) }
 protocol UsageProvider {
@@ -81,13 +81,16 @@ extension UsageProvider {
     private var timer: Timer?
     private var deadlineTimer: Timer?
     private var resetAttempts: [String: Date] = [:]
+    private let quotaObserver: @MainActor (ProviderSnapshot) -> Void
     private let credentialProbe: @Sendable () -> Bool
     private(set) var probingCredentials = false
     private var lastCredentialProbe: Date = .distantPast
+    private var lastAntigravityFileStamp: Date?
     init(providers: [UsageProvider], analytics: AnalyticsStore?,
-         credentialProbe: @escaping @Sendable () -> Bool = { ClaudeProvider.canRecoverConnection() }) {
+         credentialProbe: @escaping @Sendable () -> Bool = { ClaudeProvider.canRecoverConnection() },
+         quotaObserver: @escaping @MainActor (ProviderSnapshot) -> Void = { Notifier.shared.observe($0) }) {
         self.providers = providers; self.analytics = analytics
-        self.credentialProbe = credentialProbe
+        self.credentialProbe = credentialProbe; self.quotaObserver = quotaObserver
         snapshots = providers.map { ProviderSnapshot(id: $0.id, name: $0.id == "claude" ? "Claude" : $0.id.capitalized, systemImage: "circle", windows: [], error: nil) }
         if analytics == nil && !Preview.isEnabled { storageError = L("Yerel veritabanı açılamadı; geçmiş kaydedilmiyor.") }
     }
@@ -109,6 +112,12 @@ extension UsageProvider {
     private func checkResets() {
         let now = Date()
         checkCredentialRecovery(at: now)
+        if !isRefreshing, providers.contains(where: { $0.id == "antigravity" }),
+           let stamp = try? AntigravityProvider().sourceURL.resourceValues(forKeys: [.contentModificationDateKey]).contentModificationDate,
+           stamp != lastAntigravityFileStamp {
+            lastAntigravityFileStamp = stamp
+            refresh(providerID: "antigravity", userInitiated: false)
+        }
         updateConnectionHealth(at: now)
         for snap in snapshots where !snap.isDemo {
             for window in snap.windows {
@@ -149,13 +158,14 @@ extension UsageProvider {
             await withTaskGroup(of: ProviderSnapshot.self) { group in
                 for provider in providers { group.addTask { await provider.fetch(userInitiated: userInitiated) } }
                 for await fresh in group {
+                    let previous = snapshots.first { $0.id == fresh.id }
                     if let index = snapshots.firstIndex(where: { $0.id == fresh.id }) {
                         snapshots[index] = Self.merging(fresh, with: snapshots[index])
                     }
-                    if fresh.error == nil && !fresh.isDemo {
+                    if fresh.error == nil && !fresh.isDemo && (fresh.updatedAt == nil || previous?.updatedAt != fresh.updatedAt) {
                         let history = analytics
-                        await Task.detached(priority: .utility) { history?.record(fresh) }.value
-                        Notifier.shared.observe(fresh)
+                        await Task.detached(priority: .utility) { history?.record(fresh, now: fresh.updatedAt ?? Date()) }.value
+                        quotaObserver(fresh)
                     }
                 }
             }
@@ -196,10 +206,10 @@ enum Preview {
                 {"billingCycleEnd":"\(reset(864000))","individualUsage":{"plan":{
                 "totalPercentUsed":23,"autoPercentUsed":18,"apiPercentUsed":5}}}
                 """, CursorProvider.parseUsage),
-            sample("gemini", """
-                {"buckets":[{"modelId":"Gemini Pro","tokenType":"REQUESTS","remainingFraction":0.64,"resetTime":"\(reset(32400))"},
-                {"modelId":"Gemini Flash","tokenType":"REQUESTS","remainingFraction":0.88,"resetTime":"\(reset(32400))"}]}
-                """, GeminiProvider.parseUsage)
+            sample("antigravity", """
+                {"product":"antigravity","quota":{"gemini-weekly":{"remaining_fraction":0.64,"reset_time":"\(reset(32400))"},
+                "claude-weekly":{"remaining_fraction":0.88,"reset_time":"\(reset(32400))"}}}
+                """, { AntigravitySample.capture($0, at: now)?.windows ?? [] })
         ]
     }
     static func history(provider: String) -> [QuotaPoint] {

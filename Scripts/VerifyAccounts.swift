@@ -4,7 +4,7 @@ import Foundation
 @main enum AccountVerifier {
     static func main() async {
         let requested = Set(CommandLine.arguments.dropFirst())
-        let providers: [UsageProvider] = [CodexProvider(),ClaudeProvider(),CursorProvider(),GeminiProvider()]
+        let providers: [UsageProvider] = [CodexProvider(),ClaudeProvider(),CursorProvider(),AntigravityProvider()]
         for provider in providers where requested.contains(provider.id) {
             let snapshot = await provider.fetch()
             print("\(snapshot.name): \(snapshot.error ?? "OK")")

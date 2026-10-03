@@ -2,6 +2,14 @@ import Foundation
 @main enum CheckRunner {
     @MainActor static func main() async {
         let suite=KenarTests()
+        do { try suite.setUpWithError(); try suite.testAntigravityOfficialQuotaAndResetHints(); try suite.tearDownWithError(); print("CHECK: testAntigravityOfficialQuotaAndResetHints") } catch { CheckSupport.fail("testAntigravityOfficialQuotaAndResetHints: \(error)") }
+        do { try suite.setUpWithError(); try suite.testAntigravityMissingAndMalformedFieldsStayUnknown(); try suite.tearDownWithError(); print("CHECK: testAntigravityMissingAndMalformedFieldsStayUnknown") } catch { CheckSupport.fail("testAntigravityMissingAndMalformedFieldsStayUnknown: \(error)") }
+        do { try suite.setUpWithError(); try suite.testAntigravityBridgePrivacyAndRepaintDeduplication(); try suite.tearDownWithError(); print("CHECK: testAntigravityBridgePrivacyAndRepaintDeduplication") } catch { CheckSupport.fail("testAntigravityBridgePrivacyAndRepaintDeduplication: \(error)") }
+        do { try suite.setUpWithError(); try suite.testAntigravityMissingAndStaleSource(); try suite.tearDownWithError(); print("CHECK: testAntigravityMissingAndStaleSource") } catch { CheckSupport.fail("testAntigravityMissingAndStaleSource: \(error)") }
+        do { try suite.setUpWithError(); try suite.testAntigravityInstallerPreservesSettingsAndCanReconnect(); try suite.tearDownWithError(); print("CHECK: testAntigravityInstallerPreservesSettingsAndCanReconnect") } catch { CheckSupport.fail("testAntigravityInstallerPreservesSettingsAndCanReconnect: \(error)") }
+        do { try suite.setUpWithError(); try suite.testAntigravityInstallerRefusesCustomOrBrokenSettings(); try suite.tearDownWithError(); print("CHECK: testAntigravityInstallerRefusesCustomOrBrokenSettings") } catch { CheckSupport.fail("testAntigravityInstallerRefusesCustomOrBrokenSettings: \(error)") }
+        do { try suite.setUpWithError(); try suite.testAntigravityPreferenceMigration(); try suite.tearDownWithError(); print("CHECK: testAntigravityPreferenceMigration") } catch { CheckSupport.fail("testAntigravityPreferenceMigration: \(error)") }
+        do { try suite.setUpWithError(); try await suite.testAntigravityReplayDoesNotDuplicateHistory(); try suite.tearDownWithError(); print("CHECK: testAntigravityReplayDoesNotDuplicateHistory") } catch { CheckSupport.fail("testAntigravityReplayDoesNotDuplicateHistory: \(error)") }
         do { try suite.setUpWithError(); suite.testGeminiModelsAndMissingQuota(); try suite.tearDownWithError(); print("CHECK: testGeminiModelsAndMissingQuota") } catch { CheckSupport.fail("testGeminiModelsAndMissingQuota: \(error)") }
         do { try suite.setUpWithError(); suite.testGeminiInvalidFractionsAndMalformedResponse(); try suite.tearDownWithError(); print("CHECK: testGeminiInvalidFractionsAndMalformedResponse") } catch { CheckSupport.fail("testGeminiInvalidFractionsAndMalformedResponse: \(error)") }
         do { try suite.setUpWithError(); suite.testGeminiMultipleQuotaTypesHaveStableIDs(); try suite.tearDownWithError(); print("CHECK: testGeminiMultipleQuotaTypesHaveStableIDs") } catch { CheckSupport.fail("testGeminiMultipleQuotaTypesHaveStableIDs: \(error)") }
@@ -46,7 +54,7 @@ import Foundation
         do { try suite.setUpWithError(); try suite.testClaudeRejectedTokenWaitsForRotationWithoutInteraction(); try suite.tearDownWithError(); print("CHECK: testClaudeRejectedTokenWaitsForRotationWithoutInteraction") } catch { CheckSupport.fail("testClaudeRejectedTokenWaitsForRotationWithoutInteraction: \(error)") }
         do { try suite.setUpWithError(); try await suite.testClaudeAutomaticRecoveryIsSilentAndProviderSpecific(); try suite.tearDownWithError(); print("CHECK: testClaudeAutomaticRecoveryIsSilentAndProviderSpecific") } catch { CheckSupport.fail("testClaudeAutomaticRecoveryIsSilentAndProviderSpecific: \(error)") }
         do { try suite.setUpWithError(); try await suite.testClaudeRecoveryDoesNotPollHealthyOrRateLimitedAccounts(); try suite.tearDownWithError(); print("CHECK: testClaudeRecoveryDoesNotPollHealthyOrRateLimitedAccounts") } catch { CheckSupport.fail("testClaudeRecoveryDoesNotPollHealthyOrRateLimitedAccounts: \(error)") }
-        print("\(CheckSupport.failures == 0 ? "PASS" : "FAIL"): 44 scenarios, \(CheckSupport.failures) failures")
+        print("\(CheckSupport.failures == 0 ? "PASS" : "FAIL"): 52 scenarios, \(CheckSupport.failures) failures")
         exit(CheckSupport.failures == 0 ? 0 : 1)
     }
 }

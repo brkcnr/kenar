@@ -286,3 +286,16 @@
 "macOS blocked access to the Claude Code login — retry and approve the Keychain request for Kenar." = "macOS blocked the Claude login. Retry and choose Always Allow in the Keychain dialog.";
 "Claude Code Keychain error (%d) — retry the connection." = "Claude Code Keychain error (%d) — retry the connection.";
 "Retry %@ connection" = "Retry %@ connection";
+
+// Antigravity CLI integration
+"Antigravity bağlantısını ayarlardan bağla; ardından agy içinde /usage aç." = "Connect Antigravity in Settings, then open /usage in agy.";
+"agy henüz kota bilgisi göndermedi. /usage ile yenile." = "agy has not published quota data yet. Refresh with /usage.";
+"Son agy ölçümü güncel değil. Açık agy oturumunda /usage ile yenile." = "The last agy measurement is stale. Refresh with /usage in your active agy session.";
+"Antigravity ayar dosyası okunamadı; değiştirilmedi." = "Could not read Antigravity settings; the file was left unchanged.";
+"Mevcut agy status line ayarın korunuyor. Kenar bağlantısını eklemek için önce bu ayarı düzenle." = "Your existing agy status line was preserved. Adjust it before adding the Kenar connection.";
+"agy kota verisi yerel status line bağlantısından alınır; Google oturumuna erişilmez." = "Quota data comes from the local agy status line; Kenar does not access your Google login.";
+"Antigravity’yi bağla" = "Connect Antigravity";
+"Açık agy oturumunda çalıştır: /statusline %@. Ardından /usage ile kotayı yenile." = "Run in your active agy session: /statusline %@. Then refresh the quota with /usage.";
+"Antigravity proje tüketimi henüz sunulmuyor" = "Antigravity project consumption is not available yet";
+"agy context sayaçları hesap tüketimi değildir. Kota geçmişini Geçmiş sekmesinde görebilirsin." = "agy context counters do not measure account consumption. View quota history in the History tab.";
+"Claude Code, Codex ve eski Gemini CLI oturumlarının yerel token kayıtları otomatik aktarılır." = "Local token records from Claude Code, Codex and legacy Gemini CLI sessions are imported automatically.";

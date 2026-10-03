@@ -18,19 +18,136 @@ final class KenarTests: XCTestCase {
     private func snapshot(_ percent: Double, reset: Date? = nil, id: String = "codex", meter: String = "session") -> ProviderSnapshot {
         ProviderSnapshot(id: id,name: id,systemImage: "circle",windows: [UsageWindow(label: meter,usedPercent: percent,resetsAt: reset)],error: nil,updatedAt: Date())
     }
+    func testAntigravityOfficialQuotaAndResetHints() throws {
+        let now = Date(timeIntervalSince1970: 1_800_000_000)
+        let sample = try XCTUnwrap(AntigravitySample.capture(data(#"{"product":"antigravity","quota":{"gemini-weekly":{"remaining_fraction":0.9378,"reset_time":"2026-10-04T00:00:00Z","reset_in_seconds":20},"future-model":{"remaining_fraction":0.25,"reset_in_seconds":60}}}"#), at: now))
+        XCTAssertEqual(sample.windows.map(\.id), ["future-model", "gemini-weekly"])
+        XCTAssertEqual(sample.windows[0].usedPercent!, 75, accuracy: 0.001)
+        XCTAssertEqual(sample.windows[1].usedPercent!, 6.22, accuracy: 0.001)
+        XCTAssertEqual(sample.windows[0].resetsAt, now.addingTimeInterval(60))
+        XCTAssertEqual(sample.windows[1].resetsAt, ClaudeProvider.isoDate("2026-10-04T00:00:00Z"))
+    }
+    func testAntigravityMissingAndMalformedFieldsStayUnknown() throws {
+        let sample = try XCTUnwrap(AntigravitySample.capture(data(#"{"quota":{"new":{"remaining_fraction":"bad","reset_time":false},"missing":{},"invalid":{"remaining_fraction":1.2,"reset_in_seconds":-1}}}"#)))
+        XCTAssertEqual(sample.windows.count, 3)
+        XCTAssertTrue(sample.windows.allSatisfy { $0.usedPercent == nil && $0.resetsAt == nil })
+        XCTAssertNil(AntigravitySample.capture(data("broken")))
+        XCTAssertNil(AntigravitySample.capture(data(#"{"product":"other","quota":{}}"#)))
+        XCTAssertNil(AntigravitySample.capture(data(#"{"context_window":{"used_percentage":90}}"#)))
+        let url = dir.appendingPathComponent("sample.json")
+        let poisoned = AntigravitySample(receivedAt: Date(timeIntervalSince1970: 1e100), buckets: [])
+        try JSONEncoder().encode(poisoned).write(to: url)
+        XCTAssertNil(AntigravitySample.read(url))
+        let duplicate = AntigravitySample(receivedAt: Date(), buckets: [.init(id:"x"), .init(id:"x")])
+        try JSONEncoder().encode(duplicate).write(to: url)
+        XCTAssertNil(AntigravitySample.read(url))
+    }
+    func testAntigravityBridgePrivacyAndRepaintDeduplication() throws {
+        let now = Date(timeIntervalSince1970: 1_800_000_000)
+        let payload = data(#"{"quota":{"new":{"remaining_fraction":0.5,"reset_time":"2026-10-04T00:00:00Z"}},"email":"PRIVATE_EMAIL","conversation_id":"PRIVATE_SESSION","context_window":{"used_percentage":99},"prompt":"PRIVATE_PROMPT","access_token":"PRIVATE_TOKEN"}"#)
+        XCTAssertTrue(try AntigravitySample.receive(payload, directory: dir, at: now))
+        let file = dir.appendingPathComponent("antigravity-usage.json")
+        let raw = try String(contentsOf: file, encoding: .utf8)
+        for value in ["PRIVATE_EMAIL", "PRIVATE_SESSION", "PRIVATE_PROMPT", "PRIVATE_TOKEN", "context_window", "used_percentage"] { XCTAssertFalse(raw.contains(value)) }
+        let attributes = try FileManager.default.attributesOfItem(atPath: file.path)
+        XCTAssertEqual((attributes[.posixPermissions] as? NSNumber)?.intValue, 0o600)
+        XCTAssertFalse(try AntigravitySample.receive(payload, directory: dir, at: now.addingTimeInterval(1)))
+        XCTAssertEqual(AntigravitySample.read(file)?.receivedAt, now)
+        XCTAssertTrue(try AntigravitySample.receive(payload, directory: dir, at: now.addingTimeInterval(120)))
+        XCTAssertEqual(AntigravitySample.read(file)?.receivedAt, now.addingTimeInterval(120))
+        XCTAssertTrue(try AntigravitySample.receive(data(#"{"quota":{"new":{"remaining_fraction":0.4}}}"#), directory: dir, at: now.addingTimeInterval(121)))
+        XCTAssertEqual(AntigravitySample.read(file)?.windows.first?.usedPercent, 60)
+    }
+    func testAntigravityMissingAndStaleSource() throws {
+        let now = Date(), file = dir.appendingPathComponent("antigravity-usage.json")
+        XCTAssertNotNil(AntigravityProvider.snapshot(at: now, sourceURL: file).error)
+        XCTAssertTrue(AntigravityProvider.snapshot(at: now, sourceURL: file).windows.isEmpty)
+        try AntigravitySample.receive(data(#"{"quota":{"future":{"remaining_fraction":0.9}}}"#), directory: dir, at: now)
+        let fresh = AntigravityProvider.snapshot(at: now, sourceURL: file)
+        XCTAssertNil(fresh.error); XCTAssertTrue(fresh.hasActiveConnection(at: now))
+        let stale = AntigravityProvider.snapshot(at: now.addingTimeInterval(301), sourceURL: file)
+        XCTAssertNotNil(stale.error); XCTAssertFalse(stale.hasActiveConnection(at: now.addingTimeInterval(301)))
+        XCTAssertEqual(stale.updatedAt, now); XCTAssertEqual(stale.windows.map(\.usedPercent), fresh.windows.map(\.usedPercent))
+    }
+    func testAntigravityInstallerPreservesSettingsAndCanReconnect() throws {
+        let settings = dir.appendingPathComponent("settings.json")
+        try data(#"{"colorScheme":"dark","trustedWorkspaces":["/project"]}"#).write(to: settings)
+        let executable = URL(fileURLWithPath: "/Applications/My Kenar's.app/Contents/MacOS/Kenar")
+        let launcher = try AntigravityIntegration.install(directory: dir, executable: executable)
+        let configuration = try JSONSerialization.jsonObject(with: Data(contentsOf: settings)) as! [String:Any]
+        XCTAssertEqual(configuration["colorScheme"] as? String, "dark")
+        XCTAssertEqual(configuration["trustedWorkspaces"] as? [String], ["/project"])
+        XCTAssertEqual((configuration["statusLine"] as? [String:Any])?["stack_with_default"] as? Bool, true)
+        XCTAssertTrue(try String(contentsOf: launcher, encoding: .utf8).contains("'\\''"))
+        XCTAssertEqual((try FileManager.default.attributesOfItem(atPath: launcher.path)[.posixPermissions] as? NSNumber)?.intValue, 0o700)
+        var slashConfiguration = configuration
+        slashConfiguration["statusLine"] = ["command":launcher.path]
+        try JSONSerialization.data(withJSONObject: slashConfiguration).write(to: settings)
+        XCTAssertEqual(try AntigravityIntegration.install(directory: dir, executable: executable), launcher)
+    }
+    func testAntigravityInstallerRefusesCustomOrBrokenSettings() throws {
+        let settings = dir.appendingPathComponent("settings.json")
+        let executable = URL(fileURLWithPath: "/Applications/Kenar.app/Contents/MacOS/Kenar")
+        for original in [#"{"statusLine":{"command":"my-custom-command"}}"#, "broken"] {
+            try data(original).write(to: settings)
+            do { _ = try AntigravityIntegration.install(directory: dir, executable: executable); XCTAssertTrue(false, "existing settings must be preserved") } catch {}
+            XCTAssertEqual(try String(contentsOf: settings, encoding: .utf8), original)
+            XCTAssertFalse(FileManager.default.fileExists(atPath: dir.appendingPathComponent("kenar-statusline.sh").path))
+        }
+        try FileManager.default.removeItem(at: settings)
+        let target = dir.appendingPathComponent("target.json")
+        try data("{}").write(to: target)
+        try FileManager.default.createSymbolicLink(at: settings, withDestinationURL: target)
+        do { _ = try AntigravityIntegration.install(directory: dir, executable: executable); XCTAssertTrue(false) } catch {}
+        XCTAssertEqual(try String(contentsOf: target, encoding: .utf8), "{}")
+    }
+    @MainActor func testAntigravityPreferenceMigration() throws {
+        let domain = "KenarTests.\(UUID().uuidString)"
+        let isolated = UserDefaults(suiteName: domain)!
+        defer { isolated.removePersistentDomain(forName: domain) }
+        var old = Preferences(); old.thresholds.removeValue(forKey:"antigravity")
+        old.thresholds["gemini"] = [60,80]; old.hiddenProviders = ["gemini", "cursor"]; old.width = 370
+        isolated.set(try JSONEncoder().encode(old), forKey:"preferences.v1")
+        let migrated = Settings(defaults: isolated)
+        XCTAssertEqual(migrated.values.thresholds["antigravity"], [60,80])
+        XCTAssertEqual(migrated.values.width, 370)
+        XCTAssertEqual(migrated.values.hiddenProviders, ["gemini", "cursor", "antigravity"])
+        migrated.values.hiddenProviders.removeAll { $0 == "antigravity" }
+        XCTAssertFalse(Settings(defaults: isolated).values.hiddenProviders.contains("antigravity"))
+    }
+    @MainActor func testAntigravityReplayDoesNotDuplicateHistory() async throws {
+        let now = Date(), db = try database()
+        try AntigravitySample.receive(data(#"{"quota":{"new":{"remaining_fraction":0.5}}}"#), directory: dir, at: now)
+        let provider = AntigravityProvider(sourceURL: dir.appendingPathComponent("antigravity-usage.json"))
+        var observed = [Date?]()
+        let store = UsageStore(providers: [provider], analytics: db, quotaObserver: { observed.append($0.updatedAt) })
+        for _ in 0..<2 {
+            store.refreshAll()
+            for _ in 0..<200 where store.isRefreshing { try await Task.sleep(nanoseconds: 1_000_000) }
+            XCTAssertFalse(store.isRefreshing)
+        }
+        let points = db.points(provider:"antigravity", since: .distantPast)
+        XCTAssertEqual(points.count, 1); XCTAssertEqual(observed.count, 1)
+        XCTAssertEqual(points.first?.date.timeIntervalSince1970 ?? 0, now.timeIntervalSince1970, accuracy: 0.01)
+        let reopened = UsageStore(providers: [provider], analytics: db, quotaObserver: { _ in })
+        reopened.refreshAll()
+        for _ in 0..<200 where reopened.isRefreshing { try await Task.sleep(nanoseconds: 1_000_000) }
+        XCTAssertFalse(reopened.isRefreshing)
+        XCTAssertEqual(db.points(provider: "antigravity", since: .distantPast).count, 1)
+    }
     func testGeminiModelsAndMissingQuota() {
-        let windows = GeminiProvider.parseUsage(data(#"{"buckets":[{"modelId":"gemini-new-model","remainingFraction":0.58,"tokenType":"REQUESTS","resetTime":"2026-10-02T00:00:00Z"},{"modelId":"unknown-quota","tokenType":"TOKENS"}]}"#))
+        let windows = LegacyGeminiQuota.parseUsage(data(#"{"buckets":[{"modelId":"gemini-new-model","remainingFraction":0.58,"tokenType":"REQUESTS","resetTime":"2026-10-02T00:00:00Z"},{"modelId":"unknown-quota","tokenType":"TOKENS"}]}"#))
         XCTAssertEqual(windows.count,2); XCTAssertEqual(windows[0].usedPercent!,42,accuracy: 0.001)
         XCTAssertEqual(windows[0].modelID,"gemini-new-model"); XCTAssertNotNil(windows[0].resetsAt)
         XCTAssertNil(windows[1].usedPercent); XCTAssertEqual(windows[1].unit,"TOKENS")
     }
     func testGeminiInvalidFractionsAndMalformedResponse() {
-        XCTAssertTrue(GeminiProvider.parseUsage(data("broken")).isEmpty)
-        let windows = GeminiProvider.parseUsage(data(#"{"buckets":[{"modelId":"x","remainingFraction":1.2},{"modelId":"y","remainingFraction":-0.1}]}"#))
+        XCTAssertTrue(LegacyGeminiQuota.parseUsage(data("broken")).isEmpty)
+        let windows = LegacyGeminiQuota.parseUsage(data(#"{"buckets":[{"modelId":"x","remainingFraction":1.2},{"modelId":"y","remainingFraction":-0.1}]}"#))
         XCTAssertTrue(windows.allSatisfy { $0.usedPercent == nil })
     }
     func testGeminiMultipleQuotaTypesHaveStableIDs() {
-        let windows = GeminiProvider.parseUsage(data(#"{"buckets":[{"modelId":"x","tokenType":"REQUESTS","remainingFraction":1},{"modelId":"x","tokenType":"TOKENS","remainingFraction":0.5}]}"#))
+        let windows = LegacyGeminiQuota.parseUsage(data(#"{"buckets":[{"modelId":"x","tokenType":"REQUESTS","remainingFraction":1},{"modelId":"x","tokenType":"TOKENS","remainingFraction":0.5}]}"#))
         XCTAssertEqual(Set(windows.map(\.id)).count,2)
     }
     func testClaudeLegacyAndNewModels() {
@@ -44,13 +161,13 @@ final class KenarTests: XCTestCase {
         let codex = try XCTUnwrap(samples.first { $0.id == "codex" })
         let claude = try XCTUnwrap(samples.first { $0.id == "claude" })
         let cursor = try XCTUnwrap(samples.first { $0.id == "cursor" })
-        let gemini = try XCTUnwrap(samples.first { $0.id == "gemini" })
+        let antigravity = try XCTUnwrap(samples.first { $0.id == "antigravity" })
         XCTAssertEqual(codex.windows.map(\.label), ["Current session", "Weekly"])
         XCTAssertEqual(claude.windows.map(\.label), ["Current session", "All models", "Fable"])
         XCTAssertNotEqual(codex.primary?.resetsAt, claude.primary?.resetsAt)
         XCTAssertEqual(cursor.primary?.label, "Included usage")
         XCTAssertTrue(cursor.windows.allSatisfy { $0.label != "Weekly" })
-        XCTAssertTrue(gemini.windows.allSatisfy { $0.modelID != nil && $0.unit == "REQUESTS" })
+        XCTAssertTrue(antigravity.windows.map(\.id) == ["gemini-weekly", "claude-weekly"])
         XCTAssertTrue(samples.allSatisfy { $0.isDemo && $0.error == nil && $0.updatedAt == now })
     }
     func testCodexResetPrefersAbsoluteTimestamp() {
@@ -453,7 +570,7 @@ final class KenarTests: XCTestCase {
         XCTAssertEqual(db.projects(provider:"gemini",range:.all).first?.tokens,120)
     }
     func testRepeatedGeminiBucketsSelectMostConstrainedQuota() {
-        let windows=GeminiProvider.parseUsage(data(#"{"buckets":[{"modelId":"gemini-new","tokenType":"REQUESTS","remainingFraction":0.9,"resetTime":"2026-10-02T00:00:00Z"},{"modelId":"gemini-new","tokenType":"REQUESTS","remainingFraction":0.2,"resetTime":"2026-10-03T00:00:00Z"}]}"#))
+        let windows=LegacyGeminiQuota.parseUsage(data(#"{"buckets":[{"modelId":"gemini-new","tokenType":"REQUESTS","remainingFraction":0.9,"resetTime":"2026-10-02T00:00:00Z"},{"modelId":"gemini-new","tokenType":"REQUESTS","remainingFraction":0.2,"resetTime":"2026-10-03T00:00:00Z"}]}"#))
         XCTAssertEqual(windows.count,1);XCTAssertEqual(windows[0].usedPercent!,80,accuracy:0.001)
         XCTAssertEqual(windows[0].resetText != nil,true)
     }

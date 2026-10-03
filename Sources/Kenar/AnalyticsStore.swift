@@ -85,6 +85,9 @@ final class AnalyticsStore {
             for w in snap.windows {
                 guard let pct = w.usedPercent, !w.isUnlimited else { continue }
                 let previous = pointsLocked(provider: snap.id, meter: w.id, since: .distantPast, limit: 1).last
+                // agy republishes one captured sample; reopening Kenar must
+                // not append that same measurement or an older sample again.
+                if snap.id == "antigravity", let previous, previous.date >= now { continue }
                 let changed = previous?.reset.flatMap { old in w.resetsAt.map { abs(old.timeIntervalSince($0)) > 120 } } ?? false
                 let drop = previous != nil && w.resetsAt == nil && previous?.reset == nil && pct < (previous?.percent ?? 0) - 1
                 let period = changed || drop || previous == nil ? UUID().uuidString : previous!.period

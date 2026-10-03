@@ -1,6 +1,6 @@
 # Kenar
 
-A native macOS usage monitor for **Claude Code, Codex, Cursor, and Gemini CLI**. Kenar lives in a small, Dynamic Island–style glass panel attached to the left or right edge of your display.
+A native macOS usage monitor for **Claude Code, Codex, Cursor, and Antigravity CLI (`agy`)**. Kenar lives in a small, Dynamic Island–style glass panel attached to the left or right edge of your display.
 
 Built with SwiftUI and AppKit. Requires **macOS 13 or later** and supports both Apple Silicon and Intel Macs.
 
@@ -16,10 +16,10 @@ Built with SwiftUI and AppKit. Requires **macOS 13 or later** and supports both 
 - **Quota details and reset countdowns.** See session, weekly, and model-specific limits when the provider exposes them. Unknown usage and reset times remain unknown.
 - **Configurable alerts.** Default thresholds are 75%, 90%, and 100%, with separate settings for each provider. Alerts are deduplicated within each quota period, including across app restarts.
 - **Local usage history.** Explore daily and weekly charts with provider and quota/model filters. History starts when Kenar runs and retains 90 days of successful measurements. Reset periods are drawn separately.
-- **Project analytics.** Import token counters from local Claude Code, Codex, and Gemini CLI sessions. Group projects by Git root and filter by session, week, month, or all time. Estimated quota attribution is clearly labeled.
+- **Project analytics.** Import token counters from local Claude Code and Codex sessions, plus legacy Gemini CLI records. Antigravity quota history is supported; project token consumption is unavailable from the documented status line. Group projects by Git root and filter by session, week, month, or all time. Estimated quota attribution is clearly labeled.
 - **Display and appearance controls.** Choose a monitor, left or right edge, light/dark/system appearance, width, surface opacity, accent color, and text size. The panel falls back to the main display when its selected monitor disconnects.
 - **English and Turkish.** Switch languages in Settings → Appearance → Language. The selection persists across restarts.
-- **A background companion.** No Dock icon, optional launch at login, automatic quota refresh every two minutes, and manual refresh or connection retry.
+- **A background companion.** No Dock icon, optional launch at login, automatic quota refresh every two minutes, and manual refresh or connection retry. Antigravity updates arrive from an active `agy` session.
 
 ## Build and install
 
@@ -43,14 +43,14 @@ The app is **ad-hoc signed and not notarized by Apple**. If macOS blocks it, rev
 
 ## Connect your tools
 
-Kenar reads existing CLI logins; it does not create accounts or change the tools' credentials. API-key usage, Gemini's web app, and the Gemini API are outside this version's scope.
+Kenar uses existing CLI logins for Claude, Codex, and Cursor. Antigravity connects through its documented local status line; Kenar does not read Google's credentials. API-key billing and the Gemini web app are outside this version's scope.
 
 | Provider | Required login | Project analytics |
 | --- | --- | --- |
 | Claude | Claude Code subscription OAuth login, stored in Keychain or `.claude/.credentials.json` | Local assistant token counters |
 | Codex | Codex OAuth login in `.codex/auth.json` | Local `sessions` and `archived_sessions` records |
 | Cursor | Cursor CLI login via `cursor-agent login` | Account totals; reliable project breakdown is unavailable from this source |
-| Gemini | Gemini CLI login with a Google account | Local JSON and JSONL session records |
+| Antigravity | Existing `agy` login and the Kenar status line connection | Quota history only; context counters are not account consumption |
 
 **Claude:** opening Claude Desktop alone does not establish a Claude Code login. Run `/login` in Claude Code when necessary. If Kenar needs Keychain access, expand Claude's details and select **Retry connection**, then choose **Always Allow** in the macOS dialog to grant ongoing access to Kenar. Choosing **Allow** grants only that read. Automatic reads explicitly disable Keychain permission dialogs.
 
@@ -58,7 +58,20 @@ When Claude's connection is blocked by unavailable or expired credentials, Kenar
 
 Ad-hoc app signatures change when the app is rebuilt, so macOS may ask for access again after installing a new build. **Always Allow** applies to the app identity macOS approved; Kenar does not change the credential item's access controls.
 
-**Gemini:** model names and quotas come from your account's response; no model generation is hardcoded. If Kenar cannot determine the Google Cloud project, enter the project ID used by Gemini CLI in Settings. When several quotas share a model and measurement type, Kenar shows the most constrained one and its reset time.
+**Antigravity:** install and sign in to [Antigravity CLI](https://antigravity.google/docs/cli/install/), then choose **Settings → Providers → Connect Antigravity**. Kenar adds a small launcher to `~/.gemini/antigravity-cli/` and a `statusLine` command to its settings. Existing settings and the built-in status line are preserved; an unrelated custom status line is never overwritten.
+
+For an already-running `agy` session, activate the connection once inside its prompt:
+
+```text
+/statusline ~/.gemini/antigravity-cli/kenar-statusline.sh
+/usage
+```
+
+The [status line interface](https://antigravity.google/docs/cli/statusline/) supplies account quota buckets and reset hints as the CLI state changes. Kenar shows the most used bucket in the compact island and every reported bucket in expanded details. New bucket names are accepted without hardcoding model generations. The receiver retains only quota IDs, remaining fractions, reset times, and the receipt timestamp; email, credentials, conversation content, and context counters are discarded.
+
+Kenar picks up changed local quota data within its one-second check interval. Refresh in Kenar reads the latest published measurement; [`/usage` in agy](https://antigravity.google/docs/cli/commands/usage/) refreshes it from Google. Measurements older than five minutes are marked stale and hidden from the compact island. The bridge needs an active CLI session and does not query Google independently or send prompts. Legacy Gemini history remains under **Gemini (legacy)** in analytics.
+
+To remove the connection, run `/statusline delete` in `agy`; the launcher and Kenar's local quota file can then be deleted. Keep an active session's status line enabled while using this connection.
 
 Expired tokens should be renewed in the corresponding CLI. Kenar does not use refresh tokens. A failed request preserves the last successful measurement and marks it stale; it never substitutes sample percentages. The collapsed island hides failed connections, while the expanded panel retains their details.
 
@@ -81,7 +94,7 @@ All analytics are local. Kenar has no telemetry, crash reporting service, or thi
 - Token counts are not directly comparable across providers and do not represent billing. Cache reads are reported separately.
 - Project quota attribution is an **estimate** based on quota increases between measurements and matching local token events. Initial measurements and resets are not counted as consumption. Unexplained usage is kept separate; activity on another device cannot be assigned reliably to a local project.
 
-`CLAUDE_CONFIG_DIR`, `CODEX_HOME`, `GEMINI_CLI_HOME`, `GOOGLE_CLOUD_PROJECT`, and `GOOGLE_CLOUD_PROJECT_ID` are honored when present in the app's process environment. An app launched from Finder does not automatically inherit your terminal's environment.
+`CLAUDE_CONFIG_DIR`, `CODEX_HOME`, `AGY_CONFIG_DIR` (Kenar bridge configuration directory), and `GEMINI_CLI_HOME` (legacy transcript import) are honored when present in the app's process environment. An app launched from Finder does not automatically inherit your terminal's environment.
 
 See [SECURITY.md](SECURITY.md) for credential handling and endpoint limitations.
 
@@ -94,13 +107,13 @@ bash test.sh
 bash build.sh
 ```
 
-`test.sh` uses XCTest with full Xcode, or a standalone assertion runner for the same scenarios when only Command Line Tools are installed. The current suite contains **44 scenarios**. `build.sh` compiles both architectures, combines them into a universal app, signs it ad hoc, and verifies the disk image.
+`test.sh` uses XCTest with full Xcode, or a standalone assertion runner for the same scenarios when only Command Line Tools are installed. The current suite contains **52 scenarios**. `build.sh` compiles both architectures, combines them into a universal app, signs it ad hoc, and verifies the disk image.
 
 Inspect a live provider connection without printing tokens or raw response bodies:
 
 ```sh
 bash verify.sh codex
-bash verify.sh claude cursor gemini
+bash verify.sh claude cursor antigravity
 ```
 
 Run an explicitly labeled preview with sample data:

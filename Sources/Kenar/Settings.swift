@@ -27,7 +27,7 @@ struct Preferences: Codable {
     var accent: String = "teal"
     var notifications: Bool = true
     var resetNotifications: Bool = true
-    var thresholds: [String: [Int]] = ["claude": [75, 90, 100], "codex": [75, 90, 100], "cursor": [75, 90, 100], "gemini": [75, 90, 100]]
+    var thresholds: [String: [Int]] = ["claude": [75, 90, 100], "codex": [75, 90, 100], "cursor": [75, 90, 100], "antigravity": [75, 90, 100]]
     var hiddenProviders: [String] = []
     var geminiProject: String = ""
     var language: AppLanguage? = nil
@@ -42,6 +42,11 @@ struct Preferences: Codable {
     init(defaults: UserDefaults = .standard) {
         self.defaults = defaults
         values = defaults.data(forKey: "preferences.v1").flatMap { try? JSONDecoder().decode(Preferences.self, from: $0) } ?? Preferences()
+        if values.thresholds["antigravity"] == nil { values.thresholds["antigravity"] = values.thresholds["gemini"] ?? [75,90,100] }
+        if !defaults.bool(forKey: "antigravity-provider.v1") {
+            if values.hiddenProviders.contains("gemini"), !values.hiddenProviders.contains("antigravity") { values.hiddenProviders.append("antigravity") }
+            defaults.set(true, forKey: "antigravity-provider.v1")
+        }
         // Migrate the old default, while keeping a user's custom width.
         if !defaults.bool(forKey: "island-layout.v1") {
             if values.width == 340 { values.width = 300 }

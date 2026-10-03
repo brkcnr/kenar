@@ -9,7 +9,7 @@ Kenar reads existing CLI login credentials to request usage information from the
 | Claude | macOS Keychain `Claude Code-credentials`, or `.claude/.credentials.json` | `api.anthropic.com` |
 | Codex | `.codex/auth.json` | `chatgpt.com` |
 | Cursor | Existing Cursor CLI login | `cursor.com` |
-| Gemini | Existing Gemini CLI Google-account login | `cloudcode-pa.googleapis.com` |
+| Antigravity | No credentials read; local quota payload from an authenticated `agy` session | Local file only; no Google requests from Kenar |
 
 Requests use HTTPS to fixed provider hosts. HTTP disk caching is disabled. Credential-bearing requests cannot follow redirects to a different origin or to HTTP. App Transport Security is enabled.
 
@@ -18,6 +18,10 @@ Requests use HTTPS to fixed provider hosts. HTTP disk caching is disabled. Crede
 `~/Library/Application Support/Kenar/` holds local analytics and, where needed, short-lived access-token caches. Credential cache files use mode `0600` inside a private directory. Refresh tokens are never copied or used.
 
 Analytics records contain quota values, timestamps, provider/model identifiers, project paths, session/event identifiers, and token counters. They exclude conversation text, tool output, and attachments. There is no telemetry, remote analytics service, or crash reporting backend.
+
+## Antigravity bridge
+
+The explicit connection action registers a command in `~/.gemini/antigravity-cli/settings.json` and installs `kenar-statusline.sh`; unrelated settings and custom commands are preserved. The launcher invokes Kenar with `--antigravity-statusline`. This mode reads bounded JSON on stdin and exits without starting the macOS UI or requesting provider data. Only validated quota bucket identifiers, fractions, reset times, and the receipt timestamp are atomically stored in `antigravity-usage.json` with mode `0600`. It discards the rest of the payload, including email, workspace paths, conversation identifiers, context token counts, and credentials. Repeated repaint payloads are deduplicated, with a two-minute receipt heartbeat. Kenar does not access the Antigravity Keychain profile or send prompts.
 
 ## Claude Keychain access
 

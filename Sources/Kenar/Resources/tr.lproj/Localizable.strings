@@ -224,3 +224,16 @@
 "macOS blocked access to the Claude Code login — retry and approve the Keychain request for Kenar." = "macOS, Claude oturumuna erişimi engelledi. Yeniden dene ve Keychain penceresinde Her Zaman İzin Ver’i seç.";
 "Claude Code Keychain error (%d) — retry the connection." = "Claude Code Keychain hatası (%d) — bağlantıyı yeniden dene.";
 "Retry %@ connection" = "%@ bağlantısını yeniden dene";
+
+// Antigravity CLI integration
+"Antigravity bağlantısını ayarlardan bağla; ardından agy içinde /usage aç." = "Antigravity bağlantısını ayarlardan bağla; ardından agy içinde /usage aç.";
+"agy henüz kota bilgisi göndermedi. /usage ile yenile." = "agy henüz kota bilgisi göndermedi. /usage ile yenile.";
+"Son agy ölçümü güncel değil. Açık agy oturumunda /usage ile yenile." = "Son agy ölçümü güncel değil. Açık agy oturumunda /usage ile yenile.";
+"Antigravity ayar dosyası okunamadı; değiştirilmedi." = "Antigravity ayar dosyası okunamadı; değiştirilmedi.";
+"Mevcut agy status line ayarın korunuyor. Kenar bağlantısını eklemek için önce bu ayarı düzenle." = "Mevcut agy status line ayarın korunuyor. Kenar bağlantısını eklemek için önce bu ayarı düzenle.";
+"agy kota verisi yerel status line bağlantısından alınır; Google oturumuna erişilmez." = "agy kota verisi yerel status line bağlantısından alınır; Google oturumuna erişilmez.";
+"Antigravity’yi bağla" = "Antigravity’yi bağla";
+"Açık agy oturumunda çalıştır: /statusline %@. Ardından /usage ile kotayı yenile." = "Açık agy oturumunda çalıştır: /statusline %@. Ardından /usage ile kotayı yenile.";
+"Antigravity proje tüketimi henüz sunulmuyor" = "Antigravity proje tüketimi henüz sunulmuyor";
+"agy context sayaçları hesap tüketimi değildir. Kota geçmişini Geçmiş sekmesinde görebilirsin." = "agy context sayaçları hesap tüketimi değildir. Kota geçmişini Geçmiş sekmesinde görebilirsin.";
+"Claude Code, Codex ve eski Gemini CLI oturumlarının yerel token kayıtları otomatik aktarılır." = "Claude Code, Codex ve eski Gemini CLI oturumlarının yerel token kayıtları otomatik aktarılır.";
