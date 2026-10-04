@@ -26,6 +26,7 @@ struct NotificationLedger: Codable {
     private let center = UNUserNotificationCenter.current()
     private var ledger: NotificationLedger
     private var scheduled: [String: Date] = [:]
+    private var connectionRevisions: [String: Int] = [:]
     private let defaults = UserDefaults.standard
     private override init() {
         ledger = UserDefaults.standard.data(forKey: "notification.ledger.v1").flatMap { try? JSONDecoder().decode(NotificationLedger.self, from: $0) } ?? NotificationLedger()
@@ -41,10 +42,32 @@ struct NotificationLedger: Codable {
         center.removeAllPendingNotificationRequests(); scheduled.removeAll()
         requestAuthorizationIfNeeded()
     }
+    private func belongs(_ key: String, to providerID: String) -> Bool {
+        if key.hasPrefix(providerID + "|") { return true }
+        guard key.hasPrefix("account:"), let data = Data(base64Encoded: String(key.dropFirst(8))),
+              let fields = try? JSONDecoder().decode([String].self, from: data) else { return false }
+        return fields.first == providerID
+    }
+    func connectionChanged(providerID: String) {
+        connectionRevisions[providerID, default: 0] += 1
+        let keys = scheduled.keys.filter { belongs($0, to: providerID) }
+        center.removePendingNotificationRequests(withIdentifiers: keys.map { "reset|\($0)" })
+        keys.forEach { scheduled.removeValue(forKey: $0) }
+        // Pending resets survive app restarts; the in-memory dictionary does not.
+        Task {
+            let requests = await center.pendingNotificationRequests()
+            let ids = requests.map(\.identifier).filter { id in
+                id.hasPrefix("reset|") && belongs(String(id.dropFirst(6)), to: providerID)
+            }
+            center.removePendingNotificationRequests(withIdentifiers: ids)
+        }
+    }
     func observe(_ snapshot: ProviderSnapshot) {
+        let revision = connectionRevisions[snapshot.id, default: 0]
         Task {
             let permission = await center.notificationSettings()
-            guard permission.authorizationStatus == .authorized || permission.authorizationStatus == .provisional else { return }
+            guard revision == connectionRevisions[snapshot.id, default: 0],
+                  permission.authorizationStatus == .authorized || permission.authorizationStatus == .provisional else { return }
             observeAuthorized(snapshot)
         }
     }
@@ -53,7 +76,8 @@ struct NotificationLedger: Codable {
         guard settings.values.notifications, !snapshot.isDemo, snapshot.error == nil, !settings.values.hiddenProviders.contains(snapshot.id) else { return }
         for window in snapshot.windows where !window.isUnlimited {
             guard let used = window.usedPercent else { continue }
-            let key = "\(snapshot.id)|\(window.id)"
+            let key = window.identity(provider: snapshot.id)
+            guard window.issue == nil else { continue }
             let result = ledger.observe(key: key, used: used, reset: window.resetsAt, thresholds: settings.thresholds(for: snapshot.id))
             // A poll jumping across several thresholds produces one banner.
             if let threshold = result.crossed.max() {

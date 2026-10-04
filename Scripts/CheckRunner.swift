@@ -1,6 +1,32 @@
 import Foundation
+import AppKit
 @main enum CheckRunner {
-    @MainActor static func main() async {
+    @MainActor static var nativeWindow: NSWindow?
+    @MainActor static var nativeLabel: NSTextField?
+    @MainActor static func main() {
+        let native = Bundle.main.bundleIdentifier?.hasPrefix("local.kenar.checks") == true
+        if native { startNative(); return }
+        Task { @MainActor in await runChecks(native: false) }
+        dispatchMain()
+    }
+    @MainActor static func startNative() {
+        _ = NSApplication.shared
+        let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 580, height: 120), styleMask: [.titled, .closable], backing: .buffered, defer: false)
+        window.title = "Kenar native checks"
+        window.isReleasedWhenClosed = false
+        let label = NSTextField(labelWithString: "Running 75 checks, including WebKit…")
+        label.frame = NSRect(x: 20, y: 40, width: 540, height: 40)
+        window.contentView?.addSubview(label); nativeWindow = window; nativeLabel = label
+        window.center(); window.makeKeyAndOrderFront(nil)
+        Task { @MainActor in await runChecks(native: true) }
+        NSApp.run()
+    }
+    @MainActor static func runChecks(native: Bool) async {
+        if native {
+            let log = Bundle.main.bundleURL.deletingLastPathComponent().appendingPathComponent("native-tests.log")
+            freopen(log.path, "w", stdout); freopen(log.path, "a", stderr)
+            setbuf(stdout, nil); setbuf(stderr, nil)
+        }
         let suite=KenarTests()
         do { try suite.setUpWithError(); try suite.testAntigravityGenerationDecoderIncludesReasoningOnce(); try suite.tearDownWithError(); print("CHECK: testAntigravityGenerationDecoderIncludesReasoningOnce") } catch { CheckSupport.fail("testAntigravityGenerationDecoderIncludesReasoningOnce: \(error)") }
         do { try suite.setUpWithError(); try suite.testAntigravityGenerationDatesReferencedStepsAndRejectsBadUsage(); try suite.tearDownWithError(); print("CHECK: testAntigravityGenerationDatesReferencedStepsAndRejectsBadUsage") } catch { CheckSupport.fail("testAntigravityGenerationDatesReferencedStepsAndRejectsBadUsage: \(error)") }
@@ -64,7 +90,24 @@ import Foundation
         do { try suite.setUpWithError(); try suite.testClaudeRejectedTokenWaitsForRotationWithoutInteraction(); try suite.tearDownWithError(); print("CHECK: testClaudeRejectedTokenWaitsForRotationWithoutInteraction") } catch { CheckSupport.fail("testClaudeRejectedTokenWaitsForRotationWithoutInteraction: \(error)") }
         do { try suite.setUpWithError(); try await suite.testClaudeAutomaticRecoveryIsSilentAndProviderSpecific(); try suite.tearDownWithError(); print("CHECK: testClaudeAutomaticRecoveryIsSilentAndProviderSpecific") } catch { CheckSupport.fail("testClaudeAutomaticRecoveryIsSilentAndProviderSpecific: \(error)") }
         do { try suite.setUpWithError(); try await suite.testClaudeRecoveryDoesNotPollHealthyOrRateLimitedAccounts(); try suite.tearDownWithError(); print("CHECK: testClaudeRecoveryDoesNotPollHealthyOrRateLimitedAccounts") } catch { CheckSupport.fail("testClaudeRecoveryDoesNotPollHealthyOrRateLimitedAccounts: \(error)") }
-        print("\(CheckSupport.failures == 0 ? "PASS" : "FAIL"): 62 scenarios, \(CheckSupport.failures) failures")
-        exit(CheckSupport.failures == 0 ? 0 : 1)
+        do { try suite.setUpWithError(); try suite.testAccountScopeSeparatesAccountsProductsAndWorkspaces(); try suite.tearDownWithError(); print("CHECK: testAccountScopeSeparatesAccountsProductsAndWorkspaces") } catch { CheckSupport.fail("testAccountScopeSeparatesAccountsProductsAndWorkspaces: \(error)") }
+        do { try suite.setUpWithError(); try suite.testCursorNamedPoolsAreSeparateAndUnknownIsNotZero(); try suite.tearDownWithError(); print("CHECK: testCursorNamedPoolsAreSeparateAndUnknownIsNotZero") } catch { CheckSupport.fail("testCursorNamedPoolsAreSeparateAndUnknownIsNotZero: \(error)") }
+        do { try suite.setUpWithError(); try suite.testUsageCaptureRejectsAvailabilityAndInvalidPercentages(); try suite.tearDownWithError(); print("CHECK: testUsageCaptureRejectsAvailabilityAndInvalidPercentages") } catch { CheckSupport.fail("testUsageCaptureRejectsAvailabilityAndInvalidPercentages: \(error)") }
+        do { try suite.setUpWithError(); try suite.testAccountOriginsAndWorkspaceMetadata(); try suite.tearDownWithError(); print("CHECK: testAccountOriginsAndWorkspaceMetadata") } catch { CheckSupport.fail("testAccountOriginsAndWorkspaceMetadata: \(error)") }
+        do { try suite.setUpWithError(); try suite.testHistoryMigrationPreservesLegacyAndBacksUpWAL(); try suite.tearDownWithError(); print("CHECK: testHistoryMigrationPreservesLegacyAndBacksUpWAL") } catch { CheckSupport.fail("testHistoryMigrationPreservesLegacyAndBacksUpWAL: \(error)") }
+        do { try suite.setUpWithError(); try suite.testFutureHistorySchemaIsNotDowngraded(); try suite.tearDownWithError(); print("CHECK: testFutureHistorySchemaIsNotDowngraded") } catch { CheckSupport.fail("testFutureHistorySchemaIsNotDowngraded: \(error)") }
+        do { try suite.setUpWithError(); try suite.testScopedHistoryIsIndependentAndReplayIsDeduplicated(); try suite.tearDownWithError(); print("CHECK: testScopedHistoryIsIndependentAndReplayIsDeduplicated") } catch { CheckSupport.fail("testScopedHistoryIsIndependentAndReplayIsDeduplicated: \(error)") }
+        do { try suite.setUpWithError(); try suite.testFailedAccountCannotReviveAnotherAccountsQuota(); try suite.tearDownWithError(); print("CHECK: testFailedAccountCannotReviveAnotherAccountsQuota") } catch { CheckSupport.fail("testFailedAccountCannotReviveAnotherAccountsQuota: \(error)") }
+        do { try suite.setUpWithError(); try suite.testPartialGoogleFailureKeepsProductsSeparate(); try suite.tearDownWithError(); print("CHECK: testPartialGoogleFailureKeepsProductsSeparate") } catch { CheckSupport.fail("testPartialGoogleFailureKeepsProductsSeparate: \(error)") }
+        do { try suite.setUpWithError(); try suite.testWebAccountUsageIsNotAssignedToLocalProjectTokens(); try suite.tearDownWithError(); print("CHECK: testWebAccountUsageIsNotAssignedToLocalProjectTokens") } catch { CheckSupport.fail("testWebAccountUsageIsNotAssignedToLocalProjectTokens: \(error)") }
+        do { try suite.setUpWithError(); try suite.testAccountPreferencesSurviveAndPreserveLegacyLayout(); try suite.tearDownWithError(); print("CHECK: testAccountPreferencesSurviveAndPreserveLegacyLayout") } catch { CheckSupport.fail("testAccountPreferencesSurviveAndPreserveLegacyLayout: \(error)") }
+        if native {
+        do { try suite.setUpWithError(); try await suite.testQuotaDOMExcludesConversationAndMarketingPercentages(); try suite.tearDownWithError(); print("CHECK: testQuotaDOMExcludesConversationAndMarketingPercentages") } catch { CheckSupport.fail("testQuotaDOMExcludesConversationAndMarketingPercentages: \(error)") }
+        } else { print("NATIVE CHECK: WebKit DOM fixture requires the native check application; not run in the shell sandbox.") }
+
+        do { try suite.setUpWithError(); try await suite.testProviderConnectionChangeDiscardsOnlyItsInflightQuota(); try suite.tearDownWithError(); print("CHECK: testProviderConnectionChangeDiscardsOnlyItsInflightQuota") } catch { CheckSupport.fail("testProviderConnectionChangeDiscardsOnlyItsInflightQuota: \(error)") }
+        print("\(CheckSupport.failures == 0 ? "PASS" : "FAIL"): \(native ? 75 : 74) scenarios, \(CheckSupport.failures) failures")
+        if native { nativeLabel?.stringValue = "\(CheckSupport.failures == 0 ? "PASS" : "FAIL"): 75 scenarios, \(CheckSupport.failures) failures" }
+        else { exit(CheckSupport.failures == 0 ? 0 : 1) }
     }
 }

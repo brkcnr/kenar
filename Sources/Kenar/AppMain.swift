@@ -10,11 +10,18 @@ import AppKit
         L10n.override = Settings.shared.language.rawValue
         let analytics = Preview.isEnabled ? nil : AnalyticsStore(url: AppPaths.support.appendingPathComponent("analytics.sqlite"))
         if let analytics { indexer = TranscriptIndexer(store: analytics) }
-        store = UsageStore(providers: [CodexProvider(),ClaudeProvider(),CursorProvider(),AntigravityProvider()],analytics: analytics)
+        store = UsageStore(providers: [ClaudeProvider(),OpenAIAccountProvider(),CursorProvider(),GoogleAccountProvider()],analytics: analytics)
         controller = PanelController(store: store,settings: .shared)
         Notifier.shared.requestAuthorizationIfNeeded()
         store.startAutoRefresh()
-        NotificationCenter.default.addObserver(forName:.kenarConnectionsChanged,object:nil,queue:.main) { [weak self] _ in Task { @MainActor in self?.store.connectionsChanged() } }
+        NotificationCenter.default.addObserver(forName:.kenarConnectionsChanged,object:nil,queue:.main) { [weak self] notification in
+            let id = notification.object as? String ?? "claude"
+            Task { @MainActor in Notifier.shared.connectionChanged(providerID: id); self?.store.connectionsChanged(providerID: id) }
+        }
+        NotificationCenter.default.addObserver(forName:.kenarAccountReady,object:nil,queue:.main) { [weak self] notification in
+            guard let id = notification.object as? String else { return }
+            Task { @MainActor in self?.store.refresh(providerID: id, userInitiated: false) }
+        }
         if CommandLine.arguments.contains("--connect-claude-web") { ClaudeWebConnection.shared.connect() }
         index()
         indexTimer = Timer.scheduledTimer(withTimeInterval: 30,repeats: true) { [weak self] _ in Task { @MainActor in self?.index() } }

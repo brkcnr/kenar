@@ -55,7 +55,7 @@ import QuartzCore
     private var expandedSize: NSSize {
         let visible = store.snapshots.filter { !settings.values.hiddenProviders.contains($0.id) }
         let rowsHeight = Double(visible.count) * (settings.values.fontSize > 14 ? 62 : 56)
-        let details = visible.first { $0.id == state.selected }.map { Double(max(1,$0.windows.count)) * 60 + 38 + ($0.isStale ? 28 : 0) + ($0.error != nil ? 36 : 0) } ?? 0
+        let details = visible.first { $0.id == state.selected }.map { Double(max(1,$0.windows.count)) * 60 + Double($0.products.count) * 38 + 38 + ($0.isStale ? 28 : 0) + ($0.error != nil ? 36 : 0) } ?? 0
         return NSSize(width: settings.values.width,height: max(210,rowsHeight + 122 + details + (Preview.isEnabled ? 18 : 0)))
     }
     private var compactSize: NSSize {

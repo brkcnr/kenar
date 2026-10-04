@@ -51,11 +51,21 @@ struct ClaudeWorkspace: Identifiable { var id: String; var name: String }
     private var loginWindow: NSWindow?
     private var loginView: WKWebView?
     private var popupWindows: [NSWindow] = []
+    private var cookieFingerprint: String?
     private override init() {
         super.init(); WKWebsiteDataStore.default().httpCookieStore.add(self)
     }
     func cookiesDidChange(in cookieStore: WKHTTPCookieStore) {
-        if Settings.shared.values.claudeSource == "web" { NotificationCenter.default.post(name:.kenarConnectionsChanged,object:nil) }
+        guard Settings.shared.values.claudeSource == "web" else { return }
+        cookieStore.getAllCookies { [weak self] cookies in
+            let relevant = cookies.filter { ["claude.ai", ".claude.ai"].contains($0.domain) && ["sessionKey", "lastActiveOrg"].contains($0.name) }.sorted { $0.name < $1.name }
+            let fingerprint = QuotaScope.accountID(relevant.map { $0.name + "=" + $0.value }.joined(separator: ";"))
+            Task { @MainActor in
+                guard let self, fingerprint != self.cookieFingerprint else { return }
+                self.cookieFingerprint = fingerprint
+                NotificationCenter.default.post(name: .kenarAccountReady, object: "claude")
+            }
+        }
     }
     func connect() {
         Settings.shared.values.claudeSource = "web"
@@ -79,7 +89,27 @@ struct ClaudeWorkspace: Identifiable { var id: String; var name: String }
         window.makeKeyAndOrderFront(nil)
         if let view { window.makeFirstResponder(view) }
     }
+    func disconnect() async {
+        Settings.shared.values.claudeSource = "disconnected"
+        loginView?.stopLoading(); loginWindow?.close(); popupWindows.forEach { $0.close() }; popupWindows.removeAll()
+        loginView = nil; loginWindow = nil; workspaces = []; connectionMessage = L("Hesap bağlantısı kapalı.")
+        let store = WKWebsiteDataStore.default()
+        let cookies: [HTTPCookie] = await withCheckedContinuation { c in store.httpCookieStore.getAllCookies { c.resume(returning: $0) } }
+        for cookie in cookies where ["claude.ai", ".claude.ai"].contains(cookie.domain) {
+            await withCheckedContinuation { (c: CheckedContinuation<Void, Never>) in store.httpCookieStore.delete(cookie) { c.resume() } }
+        }
+        Settings.shared.values.claudeWorkspace = nil
+        NotificationCenter.default.post(name: .kenarConnectionsChanged, object: "claude")
+    }
     func fetch() async -> ProviderSnapshot {
+        var snapshot = await fetchSnapshot()
+        let workspace = Settings.shared.values.claudeWorkspace ?? ""
+        let account = workspace.isEmpty ? nil : QuotaScope.accountID(workspace)
+        if let account { snapshot.scopeWindows(account: account, product: "claude", source: "web-account", workspace: workspace) }
+        snapshot.products = [ProductConnection(id: "claude", title: "Claude", state: snapshot.error == nil ? .connected : .failed, message: snapshot.error, source: "web-account", account: account, updatedAt: snapshot.updatedAt)]
+        return snapshot
+    }
+    private func fetchSnapshot() async -> ProviderSnapshot {
         var snapshot = ProviderSnapshot(id:"claude",name:"Claude",systemImage:"asterisk",windows:[],error:nil)
         defer { connectionMessage = snapshot.error ?? L("Claude bağlantısı açık · %d kota penceresi",snapshot.windows.count) }
         let cookies: [HTTPCookie] = await withCheckedContinuation { continuation in
@@ -117,9 +147,9 @@ struct ClaudeWorkspace: Identifiable { var id: String; var name: String }
         // This keeps normal website verification and its cookies in WebKit.
         // Only fixed account metadata GETs are issued; no cookies leave JS.
         if let view = loginView, view.url?.scheme == "https", view.url?.host == "claude.ai" {
-            let result = try await view.callAsyncJavaScript(
-                "const r = await fetch(path, {credentials: 'same-origin'}); const body = await r.text(); if (body.length > 2097152) throw new Error('Response too large'); return {status: r.status, body};",
-                arguments:["path":path],in:nil,in:.defaultClient)
+            let result = try await view.quotaJavaScript(
+                "const c = new AbortController(); const t = setTimeout(() => c.abort(),15000); try { const r = await fetch(path, {credentials:'same-origin',redirect:'error',cache:'no-store',signal:c.signal}); const body = await r.text(); if (body.length > 2097152) throw new Error('Response too large'); return {status:r.status,body}; } finally { clearTimeout(t); }",
+                arguments:["path":path])
             if let value = result as? [String:Any], let status = value["status"] as? Int,
                let body = value["body"] as? String, let data = body.data(using:.utf8), data.count <= 2097152 { return (data,status) }
         }

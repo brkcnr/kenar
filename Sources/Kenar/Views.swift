@@ -99,8 +99,19 @@ struct PanelView: View {
                         providerRow(snap)
                         if state.selected == snap.id {
                             VStack(alignment: .leading,spacing: 10) {
-                                ForEach(snap.windows) { window in metric(window,color: indicatorColor(snap)) }
-                                if snap.windows.isEmpty { Text(L(snap.error ?? L("Kota verisi bekleniyor…"))).font(.system(size: 11)).foregroundStyle(.secondary) }
+                                if snap.products.isEmpty {
+                                    ForEach(snap.windows) { window in metric(window,color: indicatorColor(snap)) }
+                                } else {
+                                    ForEach(snap.products) { product in
+                                        VStack(alignment: .leading, spacing: 8) {
+                                            Text(product.title).font(.system(size: 10, weight: .semibold)).foregroundStyle(.secondary)
+                                            ForEach(snap.windows.filter { $0.scope?.product == product.id }) { window in metric(window,color: indicatorColor(snap)) }
+                                            if let message = product.message { Text(L(message)).font(.system(size: 10)).foregroundStyle(product.state == .failed || product.state == .expired ? .orange : .secondary) }
+                                            if product.source == "agy-bridge" || product.source == "codex-oauth" { Text(L("İsteğe bağlı yerel bağlantı")).font(.system(size: 9)).foregroundStyle(.tertiary) }
+                                        }
+                                    }
+                                }
+                                if snap.windows.isEmpty && snap.products.isEmpty { Text(L(snap.error ?? L("Kota verisi bekleniyor…"))).font(.system(size: 11)).foregroundStyle(.secondary) }
                                 if snap.isStale { Text(L(snap.error ?? L("Bu ölçüm güncel değil."))).font(.system(size: 10)).foregroundStyle(.orange) }
                                 if snap.error != nil {
                                     Button(L("Retry connection")) { store.retryConnection(providerID: snap.id) }
@@ -154,11 +165,11 @@ struct PanelView: View {
                     if let w = snap.primary,w.usedPercent != nil {
                         ProgressBar(fraction: w.fraction,color: indicatorColor(snap),height: 3)
                         TimelineView(.periodic(from: .now,by: 1)) { tick in
-                            Text(snap.isStale ? L("Güncel değil") : w.countdown(at: tick.date) ?? L("Yenilenme bilinmiyor"))
+                            Text(snap.isStale ? L("Güncel değil") : [w.productTitle, w.countdown(at: tick.date) ?? L("Yenilenme bilinmiyor")].compactMap { $0 }.joined(separator: " · "))
                                 .font(.system(size: 9)).foregroundStyle(snap.isStale ? .orange : .secondary).lineLimit(1)
                         }
                     } else {
-                        Text(snap.error == nil ? snap.primary?.isUnlimited == true ? L("Kota sınırı yok") : L("Veri bekleniyor") : L("Bağlantıyı kontrol et"))
+                        Text(snap.error == nil ? snap.primary?.isUnlimited == true ? L("Kota sınırı yok") : snap.products.contains(where: { $0.state == .limited }) ? L("Kullanım yüzdesi paylaşılmıyor.") : L("Veri bekleniyor") : L("Bağlantıyı kontrol et"))
                             .font(.system(size: 10)).foregroundStyle(.secondary).lineLimit(1)
                     }
                 }
@@ -169,7 +180,7 @@ struct PanelView: View {
         VStack(alignment: .leading,spacing: 5) {
             HStack { Text(window.title).font(.system(size: 11,weight: .medium)).lineLimit(1); Spacer(); Text(window.isUnlimited ? L("Sınırsız") : window.usedPercent.map { DisplayFormat.percent($0) } ?? L("Bilinmiyor")).font(.system(size: 11)).monospacedDigit() }
             if window.usedPercent != nil { ProgressBar(fraction: window.fraction,color: color,height: 3) }
-            TimelineView(.periodic(from: .now,by: 1)) { tick in Text(window.countdown(at: tick.date) ?? L("Yenilenme zamanı bilinmiyor")).font(.system(size: 9)).foregroundStyle(.secondary) }
+            TimelineView(.periodic(from: .now,by: 1)) { tick in Text(window.issue ?? window.countdown(at: tick.date) ?? L("Yenilenme zamanı bilinmiyor")).font(.system(size: 9)).foregroundStyle(.secondary) }
             if window.unit != "quota" { Text(window.unit == "REQUESTS" ? L("İstek kotası") : L("Ölçüm: %@",window.unit)).font(.system(size: 9)).foregroundStyle(.secondary) }
         }.frame(minHeight: 48,alignment: .top)
     }
@@ -244,9 +255,9 @@ struct SettingsView: View {
             Toggle(L("Kullanım uyarıları"),isOn: $settings.values.notifications).onChange(of: settings.values.notifications) { _ in Notifier.shared.preferencesChanged() }
             Toggle(L("Yenilenme zamanı bildirimi"),isOn: $settings.values.resetNotifications).onChange(of: settings.values.resetNotifications) { _ in Notifier.shared.preferencesChanged() }
             Text(L("Her eşik, aynı kota döneminde yalnızca bir kez bildirilir.")).font(.caption).foregroundStyle(.secondary)
-            ForEach(["codex","claude","cursor","antigravity"],id: \.self) { id in
+            ForEach(AccountGroup.ids,id: \.self) { id in
                 VStack(alignment: .leading,spacing: 6) {
-                    Text(id.capitalized).fontWeight(.semibold)
+                    Text(AccountGroup.name(id)).fontWeight(.semibold)
                     HStack {
                         ForEach(0..<3,id: \.self) { index in
                             Stepper(value: Binding(get: { settings.values.thresholds[id]?[index] ?? [75,90,100][index] },set: { new in var list = settings.values.thresholds[id] ?? [75,90,100]; list[index] = new; settings.values.thresholds[id] = list }), in: 1...100) {
@@ -262,8 +273,8 @@ struct SettingsView: View {
     }
     private var providers: some View {
         VStack(alignment: .leading,spacing: 16) {
-            ForEach(["codex","claude","cursor","antigravity"],id: \.self) { id in
-                Toggle(L("%@ göster",id.capitalized),isOn: Binding(get: { !settings.values.hiddenProviders.contains(id) },set: { enabled in settings.values.hiddenProviders.removeAll { $0 == id }; if !enabled { settings.values.hiddenProviders.append(id) } }))
+            ForEach(AccountGroup.ids,id: \.self) { id in
+                Toggle(L("%@ göster",AccountGroup.name(id)),isOn: Binding(get: { !settings.values.hiddenProviders.contains(id) },set: { enabled in settings.values.hiddenProviders.removeAll { $0 == id }; if !enabled { settings.values.hiddenProviders.append(id) } }))
             }
             Divider()
             Text(L("Claude hesabı")).fontWeight(.semibold)
@@ -274,7 +285,8 @@ struct SettingsView: View {
                 Text(L("Code kimlik bilgileri")).tag("oauth")
             }
             HStack {
-                Button(L("Claude hesabını bağla")) { claudeWeb.connect() }
+                Button(L(settings.values.claudeSource == "web" ? "Yeniden bağla" : "Bağla")) { claudeWeb.connect() }
+                Button(L("Bağlantıyı kes")) { Task { await claudeWeb.disconnect() } }.disabled(settings.values.claudeSource == "disconnected")
                 Button(L("Code kota aktarımını bağla")) {
                     do {
                         let launcher = try ClaudeQuotaBridge.install(executable:Bundle.main.executableURL!)
@@ -294,21 +306,44 @@ struct SettingsView: View {
             if let claudeSetupMessage { Text(claudeSetupMessage).font(.caption).textSelection(.enabled) }
             Text(L("Web girişi Kenar’ın kendi oturumunda saklanır; başka tarayıcının çerezleri okunmaz.")).font(.caption).foregroundStyle(.secondary)
             Divider()
-            Text("Antigravity CLI · agy").fontWeight(.semibold)
-            Text(L("agy kota verisi yerel status line bağlantısından alınır; Google oturumuna erişilmez.")).font(.caption).foregroundStyle(.secondary)
-            Button(L("Antigravity’yi bağla")) {
-                do {
-                    let launcher = try AntigravityIntegration.install(executable: Bundle.main.executableURL!)
-                    agySetupMessage = L("Açık agy oturumunda çalıştır: /statusline %@. Ardından /usage ile kotayı yenile.", launcher.path)
-                } catch { agySetupMessage = error.localizedDescription }
+            ForEach(AccountProduct.allCases) { product in
+                AccountConnectionControls(product: product, settings: settings)
+                Divider()
             }
-            if let agySetupMessage { Text(agySetupMessage).font(.caption).textSelection(.enabled) }
-            Text(L("Tokenlar yalnızca ilgili sağlayıcıya gönderilir. CLI oturumları değiştirilmez; süresi dolan oturum ilgili CLI’de yenilenir.")).font(.caption).foregroundStyle(.secondary)
+            DisclosureGroup(L("İsteğe bağlı CLI bağlantıları")) {
+                VStack(alignment: .leading, spacing: 12) {
+                    sourcePicker("OpenAI", key: "openai", alternative: "codex", title: "Codex OAuth")
+                    sourcePicker("Cursor", key: "cursor", alternative: "cli", title: "Cursor CLI")
+                    sourcePicker("Antigravity", key: "antigravity-web", alternative: "bridge", title: "agy status line")
+                    Button(L("Antigravity’yi bağla")) {
+                        do {
+                            let launcher = try AntigravityIntegration.install(executable: Bundle.main.executableURL!)
+                            agySetupMessage = L("Açık agy oturumunda çalıştır: /statusline %@. Ardından /usage ile kotayı yenile.", launcher.path)
+                            var choices = settings.values.accountConnections ?? [:]; choices["antigravity-web"] = "bridge"; settings.values.accountConnections = choices
+                            NotificationCenter.default.post(name: .kenarConnectionsChanged, object: "antigravity")
+                        } catch { agySetupMessage = error.localizedDescription }
+                    }
+                    if let agySetupMessage { Text(agySetupMessage).font(.caption).textSelection(.enabled) }
+                    Text(L("agy aktarımı açık CLI gerektirir. Hesap bağlantıları ayrı çalışır; diğer uygulamalardaki oturumlar değiştirilmez.")).font(.caption).foregroundStyle(.secondary)
+                }.padding(.top, 8)
+            }
             Divider()
             Text(L("Brink temelinde geliştirilmiştir · MIT lisansı")).font(.caption)
             Link(L("Kaynak proje"),destination: URL(string:"https://github.com/semihtalii/brink")!)
         }
     }
+    private func sourcePicker(_ label: String, key: String, alternative: String, title: String) -> some View {
+        Picker(label, selection: Binding(get: { settings.values.accountConnections?[key] ?? "disconnected" }, set: { value in
+            var choices = settings.values.accountConnections ?? [:]; choices[key] = value; settings.values.accountConnections = choices
+            let group = key == "openai" ? "codex" : key == "cursor" ? "cursor" : "antigravity"
+            NotificationCenter.default.post(name: .kenarConnectionsChanged, object: group)
+        })) {
+            Text(L("Hesap bağlantısı")).tag("web")
+            Text(title).tag(alternative)
+            Text(L("Bağlantı kapalı")).tag("disconnected")
+        }
+    }
+
 }
 
 struct AnalyticsView: View {
@@ -316,6 +351,7 @@ struct AnalyticsView: View {
     @State var tab: Int
     @State private var provider = "codex"
     @State private var meter = ""
+    @State private var account = ""
     @State private var days = 7
     @State private var range: AnalysisRange = .week
     @State private var points: [QuotaPoint] = []
@@ -324,13 +360,15 @@ struct AnalyticsView: View {
     @State private var loading = false
     @State private var generation = UUID()
     @ObservedObject var settings: Settings
-    private var meters: [String] { Array(Set(points.map(\.meter))).sorted() }
-    private var plotted: [QuotaPoint] { QuotaSeries.downsample(points.filter { $0.meter == meter }) }
+    private var accounts: [String] { Array(Set(points.map(\.account))).sorted() }
+    private var accountPoints: [QuotaPoint] { points.filter { account.isEmpty || $0.account == account } }
+    private var meters: [String] { Array(Set(accountPoints.map(\.meter))).sorted() }
+    private var plotted: [QuotaPoint] { QuotaSeries.downsample(accountPoints.filter { $0.meter == meter }) }
     var body: some View {
         VStack(alignment: .leading,spacing: 18) {
             HStack { VStack(alignment: .leading,spacing: 4) { Text(L("Kullanım ve Projeler")).font(.title2.weight(.semibold)); Text(L("Hesap kotası ve bu Mac’teki token tüketimi")).foregroundStyle(.secondary) }; Spacer(); if loading { ProgressView().controlSize(.small) } }
             HStack {
-                Picker(L("Sağlayıcı"),selection: $provider) { Text("Codex").tag("codex"); Text("Claude").tag("claude"); Text("Cursor").tag("cursor"); Text("Antigravity").tag("antigravity"); Text("Gemini (legacy)").tag("gemini") }.frame(width: 180)
+                Picker(L("Sağlayıcı"),selection: $provider) { Text("OpenAI").tag("codex"); Text("Claude").tag("claude"); Text("Cursor").tag("cursor"); Text("Google").tag("antigravity"); Text("Gemini (legacy)").tag("gemini") }.frame(width: 180)
                 Spacer()
                 Picker(L("Görünüm"),selection: $tab) { Text(L("Geçmiş")).tag(0); Text(L("Proje analizi")).tag(1) }.pickerStyle(.segmented).frame(width: 240)
             }
@@ -343,11 +381,17 @@ struct AnalyticsView: View {
         }.padding(24).frame(minWidth: 720,minHeight: 550).preferredColorScheme(settings.scheme)
         .environment(\.locale, DisplayFormat.locale)
         .onAppear(perform: load).onChange(of: provider) { _ in meter = ""; load() }.onChange(of: days) { _ in load() }
-        .onChange(of: range) { _ in load() }.onChange(of: meter) { _ in loadAttribution() }
+        .onChange(of: account) { _ in meter = meters.first ?? ""; loadAttribution() }.onChange(of: range) { _ in load() }.onChange(of: meter) { _ in loadAttribution() }
         .onReceive(NotificationCenter.default.publisher(for: .kenarDataChanged)) { _ in load() }
     }
     private var history: some View {
         VStack(alignment: .leading,spacing: 16) {
+            if !accounts.isEmpty {
+                Picker(L("Hesap"), selection: $account) {
+                    Text(L("Tüm hesaplar")).tag("")
+                    ForEach(accounts, id: \.self) { id in Text(id == "legacy-unassigned" ? L("Eski kayıtlar · Hesap bilinmiyor") : L("Hesap %@", String(id.suffix(8)))).tag(id) }
+                }
+            }
             HStack {
                 Picker(L("Dönem"),selection: $days) { Text(L("Bugün")).tag(1); Text(L("7 gün")).tag(7); Text(L("30 gün")).tag(30); Text(L("90 gün")).tag(90) }.pickerStyle(.segmented)
                 if !meters.isEmpty { Picker(L("Model / Kota"),selection: $meter) { ForEach(meters,id: \.self) { value in Text(L(points.first { $0.meter == value }?.title ?? value)).tag(value) } }.frame(width: 220) }
@@ -379,10 +423,11 @@ struct AnalyticsView: View {
                                 HStack { Text(L("Girdi %@ · Çıktı %@ · Önbellek okuma %@%@",DisplayFormat.number(row.input),DisplayFormat.number(row.output),DisplayFormat.number(row.cached),row.cacheWrite > 0 ? L(" · Yazma %@",DisplayFormat.number(row.cacheWrite)) : "")).font(.caption).foregroundStyle(.secondary) }
                             }.padding(12).background(Color.primary.opacity(0.04),in: RoundedRectangle(cornerRadius: 10)).help(row.project)
                         }
+                        Text(L("Web kullanımı yerel proje tokenlarına eklenmez; bu ekran yalnızca bu Mac’teki oturum kayıtlarını gösterir.")).font(.caption).foregroundStyle(.secondary)
                         Text(L("Tokenlar sağlayıcılar arasında aynı kota veya maliyet anlamına gelmez. Önbellek okuması ayrıca gösterilir; Claude ve Antigravity’nin ayrı önbellek okuma sayaçları toplamın dışında tutulur.")).font(.caption).foregroundStyle(.secondary)
                         if provider == "antigravity" {
                             Text(L("Antigravity toplamı çağrı kayıtlarından hesaplanır; reasoning çıktı içinde sayılır. Proje, oturumun çalışma dizinine göre belirlenir. Kota grubu ile model eşlemesi doğrulanmadığından kota payı tahmini gösterilmez.")).font(.caption).foregroundStyle(.secondary)
-                        } else if range != .session { attributionView }
+                        } else if range != .session && !plotted.contains(where: { $0.source == "web-account" }) { attributionView }
                     }
                 }
             }

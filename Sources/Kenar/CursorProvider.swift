@@ -1,4 +1,5 @@
 import Foundation
+import Security
 
 /// Reads the Cursor CLI's session JWT (macOS Keychain, service
 /// "cursor-access-token" / account "cursor-user") and queries Cursor's
@@ -24,10 +25,18 @@ struct CursorProvider: UsageProvider {
     private static let keychainAccount = "cursor-user"
 
     func fetch() async -> ProviderSnapshot {
+        await fetch(userInitiated: false)
+    }
+    func fetch(userInitiated: Bool) async -> ProviderSnapshot {
+        let source = await MainActor.run { Settings.shared.values.accountConnections?["cursor"] ?? "web" }
+        if source != "cli" { return await WebAccountReaders.cursor() }
+        return await fetchCLI(allowInteraction: userInitiated)
+    }
+    private func fetchCLI(allowInteraction: Bool) async -> ProviderSnapshot {
         var snap = ProviderSnapshot(id: id, name: "Cursor",
                                     systemImage: "cursorarrow",
                                     windows: [], error: nil)
-        guard let token = Self.loadToken(), let userId = Self.loadUserId() else {
+        guard let token = Self.loadToken(allowInteraction: allowInteraction), let userId = Self.loadUserId() else {
             return ClaudeProvider.demoSnapshot(
                 name: "Cursor", systemImage: "cursorarrow",
                 note: L("Cursor CLI credentials not found — run `cursor-agent login`"))
@@ -38,7 +47,7 @@ struct CursorProvider: UsageProvider {
             if status == 401 || status == 403 {
                 // cursor-agent rotated its token: drop cache, re-read once.
                 Self.clearCache()
-                if let fresh = Self.loadToken(), fresh != token {
+                if let fresh = Self.loadToken(allowInteraction: allowInteraction), fresh != token {
                     (data, status) = try await Self.requestUsage(token: fresh, userId: userId)
                 }
             }
@@ -52,6 +61,8 @@ struct CursorProvider: UsageProvider {
             }
             snap.windows = Self.parseUsage(data)
             snap.updatedAt = Date()
+            snap.scopeWindows(account: QuotaScope.accountID(userId), product: "cursor", source: "cursor-cli")
+            snap.products = [ProductConnection(id: "cursor", title: "Cursor", state: .connected, source: "cursor-cli", account: snap.windows.first?.scope?.account, updatedAt: snap.updatedAt)]
             if snap.windows.isEmpty { snap.error = L("No usage data in response") }
             return snap
         } catch {
@@ -94,6 +105,17 @@ struct CursorProvider: UsageProvider {
         let plan = individual?["plan"] as? [String: Any]
         var windows: [UsageWindow] = []
 
+        // Explicitly named pools only. Auto/API fields from the legacy schema
+        // are not renamed to the new pools or added together.
+        for (key, title) in [("cursorModels", "Cursor Models"), ("otherModels", "Other Models")] {
+            if let pool = plan?[key] as? [String: Any] ?? individual?[key] as? [String: Any] ?? root[key] as? [String: Any] {
+                let unlimited = pool["isUnlimited"] as? Bool == true
+                let pct = ClaudeProvider.number(pool["totalPercentUsed"] ?? pool["usedPercent"])
+                windows.append(UsageWindow(label: title, usedPercent: pct, resetsAt: ClaudeProvider.isoDate(pool["resetsAt"]) ?? reset, id: key, isUnlimited: unlimited))
+            }
+        }
+        if !windows.isEmpty { return windows }
+
         // Headline window — total included usage (matches the app's banner).
         if let pct = ClaudeProvider.number(plan?["totalPercentUsed"]) {
             windows.append(UsageWindow(label: "Included usage", usedPercent: pct, resetsAt: reset))
@@ -132,7 +154,7 @@ struct CursorProvider: UsageProvider {
     ///  3) the Keychain itself — the only step that can prompt
     /// The refresh token is never read; refreshing it would log the user out of
     /// `cursor-agent`.
-    static func loadToken() -> String? {
+    static func loadToken(allowInteraction: Bool = false) -> String? {
         if let cached = tokenCache { return cached }
 
         if let data = try? Data(contentsOf: ownStoreURL),
@@ -149,8 +171,10 @@ struct CursorProvider: UsageProvider {
         }
         lastKeychainAttempt = Date()
 
-        guard let data = ClaudeProvider.keychainData(service: keychainService,
-                                                     account: keychainAccount),
+        var query: [String: Any] = [kSecClass as String: kSecClassGenericPassword, kSecAttrService as String: keychainService, kSecAttrAccount as String: keychainAccount, kSecReturnData as String: true, kSecMatchLimit as String: kSecMatchLimitOne]
+        query[kSecUseAuthenticationUI as String] = allowInteraction ? kSecUseAuthenticationUIAllow : kSecUseAuthenticationUIFail
+        var result: CFTypeRef?
+        guard SecItemCopyMatching(query as CFDictionary, &result) == errSecSuccess, let data = result as? Data,
               let token = String(data: data, encoding: .utf8)?
                 .trimmingCharacters(in: .whitespacesAndNewlines),
               !token.isEmpty else {

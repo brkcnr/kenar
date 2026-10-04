@@ -32,6 +32,8 @@ struct Preferences: Codable {
     var geminiProject: String = ""
     var claudeSource: String? = nil
     var claudeWorkspace: String? = nil
+    var accountConnections: [String: String]? = nil
+    var accountWorkspaces: [String: String]? = nil
     var language: AppLanguage? = nil
 }
 
@@ -54,6 +56,12 @@ struct Preferences: Codable {
             if values.width == 340 { values.width = 300 }
             defaults.set(true, forKey: "island-layout.v1")
         }
+        if values.accountConnections == nil {
+            // Preserve existing optional Codex and agy source selections.
+            // The agy bridge still requires a publishing CLI session.
+            values.accountConnections = ["openai": "codex", "cursor": "web", "gemini-web": "disconnected", "antigravity-web": "bridge"]
+        }
+        if values.claudeSource == nil { values.claudeSource = "web" }
         if let data = try? JSONEncoder().encode(values) { defaults.set(data, forKey: "preferences.v1") }
     }
     var color: Color { switch values.accent { case "blue": return .blue; case "purple": return .purple; case "orange": return .orange; default: return .teal } }

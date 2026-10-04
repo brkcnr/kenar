@@ -46,6 +46,7 @@ struct ClaudeProvider: UsageProvider {
     func fetch(userInitiated: Bool) async -> ProviderSnapshot {
         let source = await MainActor.run { Settings.shared.values.claudeSource ?? "automatic" }
         if source == "web" { return await ClaudeWebConnection.shared.fetch() }
+        if source == "disconnected" { return ProviderSnapshot(id: "claude", name: "Claude", systemImage: "asterisk", windows: [], error: L("Ayarlardan Claude hesabını bağla.")) }
         if source == "automatic", let bridge = ClaudeQuotaBridge.snapshot() { return bridge }
         if let until = Self.cooldownUntil, Date() < until {
             return Self.rateLimitedSnapshot(retryAt: until)

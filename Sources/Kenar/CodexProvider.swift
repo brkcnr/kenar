@@ -42,6 +42,7 @@ struct CodexProvider: UsageProvider {
             }
             snap.windows = Self.parseUsage(data)
             snap.updatedAt = Date()
+            if let account = auth.accountID { snap.scopeWindows(account: QuotaScope.accountID(account), product: "codex-work", source: "codex-oauth", workspace: account) }
             if snap.windows.isEmpty { snap.error = L("No usage data in response") }
             return snap
         } catch {

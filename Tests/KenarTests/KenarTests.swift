@@ -5,6 +5,7 @@ import XCTest
 import AppKit
 import SQLite3
 import Security
+import WebKit
 
 final class KenarTests: XCTestCase {
     private var dir: URL!
@@ -635,8 +636,8 @@ final class KenarTests: XCTestCase {
         var gemini=snapshot(0,id:"gemini");gemini.updatedAt=now
         gemini.windows=[UsageWindow(label:"Unknown quota",usedPercent:nil,resetsAt:nil)]
         store.snapshots=[cached,claude,cursor,gemini]
-        XCTAssertEqual(store.compactProviders(hiddenProviders:[],at:now).map(\.id),["cursor","gemini"])
-        XCTAssertEqual(store.compactProviders(hiddenProviders:["cursor"],at:now).map(\.id),["gemini"])
+        XCTAssertEqual(store.compactProviders(hiddenProviders:[],at:now).map(\.id),["cursor"])
+        XCTAssertEqual(store.compactProviders(hiddenProviders:["cursor"],at:now).map(\.id),[])
         XCTAssertEqual(store.snapshots.count,4)
         XCTAssertEqual(store.snapshots.first?.primary?.usedPercent,42)
         // All rows remain available to the expanded panel, including cached errors.
@@ -751,6 +752,174 @@ final class KenarTests: XCTestCase {
         XCTAssertFalse(db.needsImport(path:"retry.jsonl",size:10,modified:1))
         XCTAssertEqual(db.projects(provider:"codex",range:.all).first?.tokens,15)
     }
+    @MainActor func testQuotaDOMExcludesConversationAndMarketingPercentages() async throws {
+        _ = NSApplication.shared
+        let configuration = WKWebViewConfiguration(); configuration.websiteDataStore = .nonPersistent()
+        let page = WKWebView(frame:NSRect(x:0,y:0,width:700,height:700),configuration:configuration)
+        let host=NSWindow(contentRect:NSRect(x:0,y:0,width:700,height:700),styleMask:[.titled],backing:.buffered,defer:false)
+        host.isReleasedWhenClosed = false; host.contentView=page
+        defer { host.close() }
+        page.loadHTMLString("""
+            <html><body>
+            <section><h2>Model quotas</h2><div>Gemini Models</div><div>Weekly limit</div><div>80% remaining</div><div>Five-hour limit</div><div>25% used</div><div>Other model available 100%</div></section>
+            <section class="conversation-container"><h2>Usage limits</h2><div>PRIVATE_CHAT 70% used</div></section>
+            <section><h2>Upgrade</h2><div>Save 50% used for marketing</div></section>
+            </body></html>
+            """,baseURL:URL(string:"https://gemini.google.com"))
+        func pump() { RunLoop.main.run(until:Date().addingTimeInterval(0.05)) }
+        for _ in 0..<100 { pump(); if page.url != nil && !page.isLoading { break }; try await Task.sleep(nanoseconds:50_000_000) }
+        let result = try await page.quotaJavaScript(QuotaPageCapture.script)
+        let value = try XCTUnwrap(result as? [String:Any])
+        let raw = String(decoding:try JSONSerialization.data(withJSONObject:value),as:UTF8.self)
+        XCTAssertFalse(raw.contains("PRIVATE_CHAT")); XCTAssertFalse(raw.contains("marketing"))
+        let capture = QuotaPageCapture.parse(value,at:Date())
+        XCTAssertEqual(capture.windows.map(\.usedPercent),[20,25])
+        XCTAssertEqual(capture.windows.map(\.label),["Gemini Models · Weekly limit","Gemini Models · Five-hour limit"])
+    }
+    @MainActor func testProviderConnectionChangeDiscardsOnlyItsInflightQuota() async throws {
+        let changed = GenericSourceChangeProvider(id:"cursor"), other=GenericSourceChangeProvider(id:"codex"), db=try database()
+        let store=UsageStore(providers:[changed,other],analytics:db,quotaObserver:{_ in})
+        store.refreshAll(); try await Task.sleep(nanoseconds:1_000_000); store.connectionsChanged(providerID:"cursor")
+        for _ in 0..<500 where store.isRefreshing { try await Task.sleep(nanoseconds:1_000_000) }
+        XCTAssertFalse(store.isRefreshing)
+        XCTAssertFalse(db.points(provider:"cursor",since:.distantPast).contains { $0.percent == 80 })
+        XCTAssertTrue(db.points(provider:"codex",since:.distantPast).contains { $0.percent == 80 })
+        XCTAssertEqual(store.snapshots.first { $0.id == "cursor" }?.primary?.usedPercent,40)
+    }
+    func testAccountScopeSeparatesAccountsProductsAndWorkspaces() throws {
+        let scope = QuotaScope(account: "a", workspace: "one", product: "codex-work", pool: "session", source: "web-account")
+        var changed = scope
+        changed.account = "b"
+        XCTAssertNotEqual(scope.key(provider: "codex", window: "session"), changed.key(provider: "codex", window: "session"))
+        changed = scope; changed.workspace = "two"
+        XCTAssertNotEqual(scope.key(provider: "codex", window: "session"), changed.key(provider: "codex", window: "session"))
+        changed = scope; changed.product = "chatgpt-chat"
+        XCTAssertNotEqual(scope.key(provider: "codex", window: "session"), changed.key(provider: "codex", window: "session"))
+        changed = scope; changed.source = "codex-oauth"
+        XCTAssertEqual(scope.key(provider: "codex", window: "session"), changed.key(provider: "codex", window: "session"))
+        XCTAssertEqual(try JSONDecoder().decode(QuotaScope.self, from: JSONEncoder().encode(scope)), scope)
+        XCTAssertFalse(QuotaScope.accountID("private-account-id").contains("private-account-id"))
+        var ledger = NotificationLedger()
+        let key = scope.key(provider: "codex", window: "session")
+        XCTAssertEqual(ledger.observe(key: key, used: 92, reset: nil, thresholds: [75,90,100]).crossed, [75,90])
+        var restored = try JSONDecoder().decode(NotificationLedger.self, from: JSONEncoder().encode(ledger))
+        XCTAssertTrue(restored.observe(key: key, used: 93, reset: nil, thresholds: [75,90,100]).crossed.isEmpty)
+    }
+    func testCursorNamedPoolsAreSeparateAndUnknownIsNotZero() {
+        let windows = CursorProvider.parseUsage(data(#"{"billingCycleEnd":"2026-11-01T00:00:00Z","individualUsage":{"plan":{"cursorModels":{"totalPercentUsed":30},"otherModels":{"usedPercent":75},"totalPercentUsed":99,"autoPercentUsed":40}}}"#))
+        XCTAssertEqual(windows.map(\.label), ["Cursor Models", "Other Models"])
+        XCTAssertEqual(windows.map(\.usedPercent), [30,75])
+        let unknown = CursorProvider.parseUsage(data(#"{"cursorModels":{},"otherModels":{"isUnlimited":true}}"#))
+        XCTAssertNil(unknown.first?.usedPercent); XCTAssertTrue(unknown.last?.isUnlimited == true)
+    }
+    func testUsageCaptureRejectsAvailabilityAndInvalidPercentages() {
+        let capture = QuotaPageCapture.parse(["signedIn":true, "foundUsage":true, "meters":[
+            ["label":"Weekly", "percent":80, "direction":"remaining"],
+            ["label":"Session", "percent":25, "direction":"used"],
+            ["label":"Availability", "percent":100, "direction":"available"],
+            ["label":"Boolean", "percent":true, "direction":"used"],
+            ["label":"Bad", "percent":110, "direction":"remaining"]]], at: Date())
+        XCTAssertEqual(capture.windows.map(\.usedPercent), [20,25])
+        XCTAssertTrue(capture.signedIn); XCTAssertTrue(capture.foundUsage)
+        XCTAssertTrue(QuotaPageCapture.parse(["models":["available":true]], at:Date()).windows.isEmpty)
+    }
+    @MainActor func testAccountOriginsAndWorkspaceMetadata() {
+        XCTAssertTrue(AccountNavigation.permitsLocalSubframe(URL(string:"about:blank")!,isMainFrame:false))
+        XCTAssertTrue(AccountNavigation.permitsLocalSubframe(URL(string:"about:srcdoc")!,isMainFrame:false))
+        XCTAssertFalse(AccountNavigation.permitsLocalSubframe(URL(string:"about:blank")!,isMainFrame:true))
+        XCTAssertFalse(AccountNavigation.permitsLocalSubframe(URL(string:"file:///tmp/test")!,isMainFrame:false))
+
+        for product in AccountProduct.allCases {
+            XCTAssertTrue(product.permits(product.usageURL))
+            XCTAssertFalse(product.permits(URL(string:"http://" + product.host)))
+            XCTAssertFalse(product.permits(URL(string:"https://" + product.host + ".attacker.test")))
+            XCTAssertFalse(product.permits(URL(string:"https://" + product.host + ":444/")))
+        }
+        let choices = WebAccountReaders.parseOpenAIWorkspaces(data(#"{"accounts":{"account-a":{"account":{"name":"Personal"}},"account-b":{"account":{"name":"Team"}}},"accessToken":"NEVER_STORE"}"#))
+        XCTAssertEqual(choices.map(\.id), ["account-a", "account-b"])
+        XCTAssertEqual(choices.map(\.name), ["Personal", "Team"])
+    }
+    func testHistoryMigrationPreservesLegacyAndBacksUpWAL() throws {
+        let url = dir.appendingPathComponent("old.sqlite"); var connection: OpaquePointer?
+        XCTAssertEqual(sqlite3_open(url.path, &connection), SQLITE_OK)
+        XCTAssertEqual(sqlite3_exec(connection,"PRAGMA journal_mode=WAL; PRAGMA user_version=1; CREATE TABLE quota(id INTEGER PRIMARY KEY,provider TEXT,meter TEXT,label TEXT,model TEXT,unit TEXT,ts REAL,pct REAL,reset REAL,period TEXT); INSERT INTO quota VALUES(1,'codex','session','Session','','quota',1800000000,42,NULL,'old-period');",nil,nil,nil), SQLITE_OK)
+        let migrated = try XCTUnwrap(AnalyticsStore(url:url))
+        let points = migrated.points(provider:"codex", since:.distantPast)
+        XCTAssertEqual(points.count,1); XCTAssertEqual(points.first?.account,"legacy-unassigned")
+        XCTAssertEqual(points.first?.period,"old-period"); XCTAssertEqual(points.first?.percent,42)
+        XCTAssertTrue(FileManager.default.fileExists(atPath:dir.appendingPathComponent("old.pre-1.5.sqlite").path))
+        var backup: OpaquePointer?; XCTAssertEqual(sqlite3_open(dir.appendingPathComponent("old.pre-1.5.sqlite").path,&backup),SQLITE_OK)
+        var st: OpaquePointer?; XCTAssertEqual(sqlite3_prepare_v2(backup,"SELECT COUNT(*) FROM quota",-1,&st,nil),SQLITE_OK)
+        XCTAssertEqual(sqlite3_step(st),SQLITE_ROW); XCTAssertEqual(sqlite3_column_int(st,0),1)
+        sqlite3_finalize(st); sqlite3_close(backup); sqlite3_close(connection)
+    }
+    func testFutureHistorySchemaIsNotDowngraded() throws {
+        let url=dir.appendingPathComponent("future.sqlite"); var connection:OpaquePointer?
+        XCTAssertEqual(sqlite3_open(url.path,&connection),SQLITE_OK)
+        XCTAssertEqual(sqlite3_exec(connection,"PRAGMA user_version=99",nil,nil,nil),SQLITE_OK)
+        XCTAssertNil(AnalyticsStore(url:url))
+        var st:OpaquePointer?; XCTAssertEqual(sqlite3_prepare_v2(connection,"PRAGMA user_version",-1,&st,nil),SQLITE_OK)
+        XCTAssertEqual(sqlite3_step(st),SQLITE_ROW); XCTAssertEqual(sqlite3_column_int(st,0),99)
+        sqlite3_finalize(st); sqlite3_close(connection)
+    }
+    func testScopedHistoryIsIndependentAndReplayIsDeduplicated() throws {
+        let db=try database(), now=Date()
+        var a=snapshot(20,id:"antigravity"); a.windows[0].scope=QuotaScope(account:"a",product:"gemini-web",pool:"session",source:"web-account")
+        a.windows[0].measuredAt=now
+        db.record(a,now:now); db.record(a,now:now.addingTimeInterval(5))
+        var b=a; b.windows[0].scope?.account="b"; b.windows[0].usedPercent=80
+        db.record(b,now:now)
+        var c=a; c.windows[0].scope?.product="antigravity"; c.windows[0].usedPercent=40
+        db.record(c,now:now)
+        let points=db.points(provider:"antigravity",since:.distantPast)
+        XCTAssertEqual(points.count,3); XCTAssertEqual(Set(points.map(\.meter)).count,3)
+        XCTAssertEqual(Set(points.map(\.period)).count,3)
+    }
+    @MainActor func testFailedAccountCannotReviveAnotherAccountsQuota() {
+        var previous=snapshot(90); previous.scopeWindows(account:"a",product:"codex-work",source:"web-account")
+        previous.products=[ProductConnection(id:"codex-work",title:"Codex / Work",state:.connected,source:"web-account",account:"a")]
+        var failed=snapshot(0); failed.windows=[]; failed.updatedAt=nil; failed.error="offline"
+        failed.products=[ProductConnection(id:"codex-work",title:"Codex / Work",state:.failed,source:"web-account",account:"b")]
+        XCTAssertTrue(UsageStore.merging(failed,with:previous).windows.isEmpty)
+        failed.products[0].account="a"
+        XCTAssertEqual(UsageStore.merging(failed,with:previous).primary?.usedPercent,90)
+        var chat = UsageWindow(label:"chat",usedPercent:30,resetsAt:nil)
+        chat.scope = QuotaScope(account:"a",product:"chatgpt-chat",pool:"chat",source:"web-account")
+        previous.windows.append(chat)
+        failed.products.append(ProductConnection(id:"chatgpt-chat",title:"ChatGPT Chat",state:.failed,source:"web-account",account:"b"))
+        XCTAssertEqual(UsageStore.merging(failed,with:previous).windows.count,1)
+    }
+    @MainActor func testPartialGoogleFailureKeepsProductsSeparate() {
+        var old=snapshot(95,id:"antigravity"); old.scopeWindows(account:"a",product:"antigravity",source:"web-account")
+        var fresh=snapshot(10,id:"antigravity"); fresh.scopeWindows(account:"b",product:"gemini-web",source:"web-account")
+        fresh.products=[ProductConnection(id:"gemini-web",title:"Gemini",state:.connected,source:"web-account",account:"b"),ProductConnection(id:"antigravity",title:"Antigravity",state:.failed,message:"offline",source:"web-account",account:"a")]
+        let merged=UsageStore.merging(fresh,with:old)
+        XCTAssertEqual(merged.windows.count,2); XCTAssertEqual(merged.primary?.usedPercent,10)
+        XCTAssertEqual(merged.windows.last?.issue,"offline"); XCTAssertTrue(merged.hasActiveConnection())
+    }
+    func testWebAccountUsageIsNotAssignedToLocalProjectTokens() throws {
+        let db=try database(), now=Date()
+        var sample=snapshot(10); sample.scopeWindows(account:"a",product:"codex-work",source:"web-account")
+        sample.windows[0].measuredAt=now; db.record(sample,now:now)
+        db.importEvents([TokenEvent(provider:"codex",key:"local",timestamp:now.addingTimeInterval(10),session:"s",project:"/local",model:"m",input:100,output:0,cached:0)],path:"local",size:1,modified:1)
+        sample.windows[0].usedPercent=30; sample.windows[0].measuredAt=now.addingTimeInterval(20); db.record(sample,now:now.addingTimeInterval(20))
+        let result=db.attribution(provider:"codex",meter:sample.windows[0].historyMeter,since:.distantPast)
+        XCTAssertEqual(result.first?.project,"__elsewhere__"); XCTAssertEqual(result.first?.percentagePoints,20)
+        XCTAssertEqual(db.projects(provider:"codex",range:.all).first?.tokens,100)
+    }
+    @MainActor func testAccountPreferencesSurviveAndPreserveLegacyLayout() throws {
+        let domain="KenarTests.\(UUID().uuidString)"; let defaults=UserDefaults(suiteName:domain)!
+        defer { defaults.removePersistentDomain(forName:domain) }
+        var legacy=Preferences(); legacy.width=375; legacy.edge = .left; legacy.hiddenProviders=["cursor"]; legacy.claudeSource="web"; legacy.claudeWorkspace="existing-workspace"
+        defaults.set(try JSONEncoder().encode(legacy),forKey:"preferences.v1")
+        let settings=Settings(defaults:defaults)
+        XCTAssertEqual(settings.values.width,375); XCTAssertEqual(settings.values.edge,.left)
+        XCTAssertEqual(settings.values.hiddenProviders,["cursor"]); XCTAssertEqual(settings.values.claudeWorkspace,"existing-workspace")
+        settings.values.accountConnections?["openai"]="web"; settings.values.accountWorkspaces=["openai":"team"]
+        let restored=Settings(defaults:defaults)
+        XCTAssertEqual(restored.values.accountConnections?["openai"],"web"); XCTAssertEqual(restored.values.accountWorkspaces?["openai"],"team")
+    }
+
 }
 
 private actor RetryProviderSpy: UsageProvider {
@@ -783,5 +952,16 @@ private actor SourceChangeProvider: UsageProvider {
         attempts += 1; let current=attempts
         if current == 1 { try? await Task.sleep(nanoseconds:20_000_000) }
         return ProviderSnapshot(id:id,name:"Claude",systemImage:"asterisk",windows:[UsageWindow(label:"session",usedPercent:current == 1 ? 10 : 40,resetsAt:nil)],error:nil,updatedAt:Date())
+    }
+}
+
+private actor GenericSourceChangeProvider: UsageProvider {
+    nonisolated let id:String
+    private var attempts=0
+    init(id:String) { self.id=id }
+    func fetch() async -> ProviderSnapshot {
+        attempts += 1; let attempt=attempts
+        try? await Task.sleep(nanoseconds:20_000_000)
+        return ProviderSnapshot(id:id,name:id,systemImage:"circle",windows:[UsageWindow(label:"Session",usedPercent:attempt == 1 ? 80 : 40,resetsAt:nil)],error:nil,updatedAt:Date())
     }
 }

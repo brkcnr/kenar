@@ -19,7 +19,7 @@ struct DemoDesktop: View {
                 Text("macOS usage monitor").font(.system(size: 11)).foregroundStyle(.secondary)
                 Text(caption.step).font(.system(size: 12, weight: .medium)).padding(.top, 16)
                 Spacer()
-                Text("Native SwiftUI preview\nSample data").font(.system(size: 9)).foregroundStyle(.secondary)
+                Text("Native interface\nSample data").font(.system(size: 9)).foregroundStyle(.secondary)
             }.padding(28).frame(width: 216, height: 640, alignment: .topLeading)
         }.environment(\.colorScheme, .dark)
     }
@@ -69,8 +69,9 @@ final class DemoPointer: NSView {
         let expandedSize = NSSize(width: 300, height: Double(store.snapshots.count) * 56 + 122 + 18)
         let expanded = frame(expandedSize)
         func details(_ id: String) -> NSRect {
-            let windows = store.snapshots.first { $0.id == id }!.windows.count
-            return frame(NSSize(width: expandedSize.width, height: expandedSize.height + Double(windows) * 60 + 38))
+            let snapshot = store.snapshots.first { $0.id == id }!
+            let windows = snapshot.windows.count
+            return frame(NSSize(width: expandedSize.width, height: expandedSize.height + Double(windows) * 60 + Double(snapshot.products.count) * 38 + 38))
         }
         panel.frame = compact; canvas.addSubview(panel)
         let cursor = DemoPointer(frame: NSRect(x: 375, y: 136, width: 20, height: 26))
@@ -124,7 +125,7 @@ final class DemoPointer: NSView {
         keyframes.append(("compact", frames.count - 1))
         pointer(CGPoint(x: 492, y: 320)); capture(PanelInteraction.pollInterval)
         state.expanded = true; resize(expanded); hold("expanded", 1.0)
-        caption.step = "Codex · session & weekly"
+        caption.step = "OpenAI · Codex / Work and Chat"
         pointer(CGPoint(x: 352, y: 378)); capture(0.25)
         state.selected = "codex"; resize(details("codex")); hold("codex", 2.0)
         // Collapse Codex before opening Claude, just as the panel does when

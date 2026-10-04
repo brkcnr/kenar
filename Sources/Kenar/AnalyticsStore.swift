@@ -9,6 +9,7 @@ struct TokenEvent {
 struct QuotaPoint: Identifiable {
     var id: Int64; var provider: String; var meter: String; var title: String; var model: String; var unit: String
     var date: Date; var percent: Double; var reset: Date?; var period: String
+    var account: String = "legacy-unassigned"; var workspace: String = ""; var product: String = "legacy"; var pool: String = ""; var source: String = "legacy"
 }
 struct ProjectRow: Identifiable {
     var id: String { project }; var project: String; var input: Int; var output: Int; var cached: Int; var cacheWrite: Int
@@ -52,8 +53,14 @@ final class AnalyticsStore {
     init?(url: URL) {
         do { try FileManager.default.createDirectory(at: url.deletingLastPathComponent(), withIntermediateDirectories: true, attributes: [.posixPermissions: 0o700]) }
         catch { return nil }
+        let existing = FileManager.default.fileExists(atPath: url.path)
         guard sqlite3_open_v2(url.path, &db, SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE | SQLITE_OPEN_FULLMUTEX, nil) == SQLITE_OK else { if let db { sqlite3_close(db) }; return nil }
         sqlite3_busy_timeout(db, 5000)
+        var versionStatement: OpaquePointer?
+        guard sqlite3_prepare_v2(db, "PRAGMA user_version", -1, &versionStatement, nil) == SQLITE_OK else { sqlite3_close(db); return nil }
+        let version = sqlite3_step(versionStatement) == SQLITE_ROW ? sqlite3_column_int(versionStatement, 0) : -1
+        sqlite3_finalize(versionStatement)
+        guard (0...2).contains(version) else { sqlite3_close(db); return nil }
         let schema = """
         PRAGMA journal_mode=WAL;
         CREATE TABLE IF NOT EXISTS quota(id INTEGER PRIMARY KEY,provider TEXT,meter TEXT,label TEXT,model TEXT,unit TEXT,ts REAL,pct REAL,reset REAL,period TEXT);
@@ -61,12 +68,42 @@ final class AnalyticsStore {
         CREATE TABLE IF NOT EXISTS events(provider TEXT,key TEXT,ts REAL,session TEXT,project TEXT,model TEXT,input INTEGER,output INTEGER,cached INTEGER,cache_write INTEGER,PRIMARY KEY(provider,key));
         CREATE INDEX IF NOT EXISTS events_time ON events(provider,ts);
         CREATE TABLE IF NOT EXISTS cursors(path TEXT PRIMARY KEY,size INTEGER,mtime REAL);
-        PRAGMA user_version=1;
         """
         guard sqlite3_exec(db, schema, nil, nil, nil) == SQLITE_OK else { sqlite3_close(db); return nil }
+        if version < 2 {
+            // The SQLite backup API includes committed WAL pages. Copying only
+            // the .sqlite file could lose recent measurements during migration.
+            let backupURL = url.deletingPathExtension().appendingPathExtension("pre-1.5.sqlite")
+            if existing && !FileManager.default.fileExists(atPath: backupURL.path) {
+                guard Self.backup(db, to: backupURL) else { sqlite3_close(db); return nil }
+            }
+            let migration = """
+                BEGIN IMMEDIATE;
+                ALTER TABLE quota ADD COLUMN account TEXT NOT NULL DEFAULT 'legacy-unassigned';
+                ALTER TABLE quota ADD COLUMN workspace TEXT NOT NULL DEFAULT '';
+                ALTER TABLE quota ADD COLUMN product TEXT NOT NULL DEFAULT 'legacy';
+                ALTER TABLE quota ADD COLUMN pool TEXT NOT NULL DEFAULT '';
+                ALTER TABLE quota ADD COLUMN source TEXT NOT NULL DEFAULT 'legacy';
+                CREATE INDEX quota_account_lookup ON quota(provider,account,meter,ts);
+                PRAGMA user_version=2;
+                COMMIT;
+                """
+            guard sqlite3_exec(db, migration, nil, nil, nil) == SQLITE_OK else {
+                sqlite3_exec(db, "ROLLBACK", nil, nil, nil); sqlite3_close(db); return nil
+            }
+        }
         try? FileManager.default.setAttributes([.posixPermissions: 0o600], ofItemAtPath: url.path)
     }
     deinit { if let db { sqlite3_close(db) } }
+    private static func backup(_ source: OpaquePointer?, to url: URL) -> Bool {
+        var destination: OpaquePointer?
+        guard sqlite3_open(url.path, &destination) == SQLITE_OK else { if let destination { sqlite3_close(destination) }; return false }
+        defer { sqlite3_close(destination) }
+        guard let backup = sqlite3_backup_init(destination, "main", source, "main") else { return false }
+        let result = sqlite3_backup_step(backup, -1); let finished = sqlite3_backup_finish(backup)
+        try? FileManager.default.setAttributes([.posixPermissions: 0o600], ofItemAtPath: url.path)
+        return result == SQLITE_DONE && finished == SQLITE_OK
+    }
     private func prepare(_ sql: String) -> OpaquePointer? {
         var st: OpaquePointer?
         guard sqlite3_prepare_v2(db, sql, -1, &st, nil) == SQLITE_OK else { error = L("SQLite sorgusu hazırlanamadı."); return nil }
@@ -83,19 +120,20 @@ final class AnalyticsStore {
         guard !snap.isDemo, snap.error == nil else { return }
         queue.sync {
             for w in snap.windows {
-                guard let pct = w.usedPercent, !w.isUnlimited else { continue }
-                let previous = pointsLocked(provider: snap.id, meter: w.id, since: .distantPast, limit: 1).last
+                guard let pct = w.usedPercent, !w.isUnlimited, w.issue == nil else { continue }
+                let measured = w.measuredAt ?? now
+                let previous = pointsLocked(provider: snap.id, meter: w.historyMeter, since: .distantPast, limit: 1).last
                 // agy republishes one captured sample; reopening Kenar must
                 // not append that same measurement or an older sample again.
-                if ["antigravity","claude"].contains(snap.id), let previous, previous.date.timeIntervalSince(now) >= -0.001 { continue }
+                if let previous, previous.date.timeIntervalSince(measured) >= -0.001 { continue }
                 let changed = previous?.reset.flatMap { old in w.resetsAt.map { abs(old.timeIntervalSince($0)) > 120 } } ?? false
                 let drop = previous != nil && w.resetsAt == nil && previous?.reset == nil && pct < (previous?.percent ?? 0) - 1
                 let period = changed || drop || previous == nil ? UUID().uuidString : previous!.period
-                guard let st = prepare("INSERT INTO quota(provider,meter,label,model,unit,ts,pct,reset,period) VALUES(?,?,?,?,?,?,?,?,?)") else { continue }
-                bind(st,1,snap.id); bind(st,2,w.id); bind(st,3,w.title); bind(st,4,w.modelID ?? ""); bind(st,5,w.unit)
-                sqlite3_bind_double(st,6,now.timeIntervalSince1970); sqlite3_bind_double(st,7,pct)
+                guard let st = prepare("INSERT INTO quota(provider,meter,label,model,unit,ts,pct,reset,period,account,workspace,product,pool,source) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?)") else { continue }
+                bind(st,1,snap.id); bind(st,2,w.historyMeter); bind(st,3,[w.productTitle,w.title].compactMap { $0 }.joined(separator: " · ")); bind(st,4,w.modelID ?? ""); bind(st,5,w.unit)
+                sqlite3_bind_double(st,6,measured.timeIntervalSince1970); sqlite3_bind_double(st,7,pct)
                 if let reset = w.resetsAt { sqlite3_bind_double(st,8,reset.timeIntervalSince1970) } else { sqlite3_bind_null(st,8) }
-                bind(st,9,period); step(st); sqlite3_finalize(st)
+                bind(st,9,period); bind(st,10,w.scope?.account ?? "legacy-unassigned"); bind(st,11,w.scope?.workspace ?? ""); bind(st,12,w.scope?.product ?? "legacy"); bind(st,13,w.scope?.pool ?? w.id); bind(st,14,w.scope?.source ?? "legacy"); step(st); sqlite3_finalize(st)
             }
             if let st = prepare("DELETE FROM quota WHERE ts < ?") {
                 sqlite3_bind_double(st,1,now.addingTimeInterval(-90 * 86400).timeIntervalSince1970); step(st); sqlite3_finalize(st)
@@ -103,12 +141,12 @@ final class AnalyticsStore {
         }
     }
     private func pointsLocked(provider: String, meter: String? = nil, since: Date, limit: Int? = nil) -> [QuotaPoint] {
-        let sql = "SELECT id,provider,meter,label,model,unit,ts,pct,reset,period FROM quota WHERE provider=? AND ts>=?" + (meter == nil ? "" : " AND meter=?") + " ORDER BY ts DESC,id DESC" + (limit.map { " LIMIT \($0)" } ?? "")
+        let sql = "SELECT id,provider,meter,label,model,unit,ts,pct,reset,period,account,workspace,product,pool,source FROM quota WHERE provider=? AND ts>=?" + (meter == nil ? "" : " AND meter=?") + " ORDER BY ts DESC,id DESC" + (limit.map { " LIMIT \($0)" } ?? "")
         guard let st = prepare(sql) else { return [] }; defer { sqlite3_finalize(st) }
         bind(st,1,provider); sqlite3_bind_double(st,2,since.timeIntervalSince1970); if let meter { bind(st,3,meter) }
         var rows: [QuotaPoint] = []
         while sqlite3_step(st) == SQLITE_ROW {
-            rows.append(QuotaPoint(id: sqlite3_column_int64(st,0), provider: text(st,1), meter: text(st,2), title: text(st,3), model: text(st,4), unit: text(st,5), date: Date(timeIntervalSince1970: sqlite3_column_double(st,6)), percent: sqlite3_column_double(st,7), reset: sqlite3_column_type(st,8) == SQLITE_NULL ? nil : Date(timeIntervalSince1970: sqlite3_column_double(st,8)), period: text(st,9)))
+            rows.append(QuotaPoint(id: sqlite3_column_int64(st,0), provider: text(st,1), meter: text(st,2), title: text(st,3), model: text(st,4), unit: text(st,5), date: Date(timeIntervalSince1970: sqlite3_column_double(st,6)), percent: sqlite3_column_double(st,7), reset: sqlite3_column_type(st,8) == SQLITE_NULL ? nil : Date(timeIntervalSince1970: sqlite3_column_double(st,8)), period: text(st,9), account: text(st,10), workspace: text(st,11), product: text(st,12), pool: text(st,13), source: text(st,14)))
         }
         return rows.reversed()
     }
@@ -162,6 +200,10 @@ final class AnalyticsStore {
         let points = pointsLocked(provider: provider,meter: meter,since: since)
         var totals: [String: Double] = [:]
         for (a,b) in zip(points,points.dropFirst()) where a.period == b.period && b.percent > a.percent {
+            if b.source == "web-account" {
+                totals["__elsewhere__", default: 0] += b.percent - a.percent
+                continue
+            }
             let scoped = !b.model.isEmpty
             let sql = "SELECT project,SUM(input+output+cache_write) FROM events WHERE provider=? AND ts>? AND ts<=?" + (scoped ? " AND (model=? OR model LIKE ?)" : "") + " GROUP BY project"
             guard let st = prepare(sql) else { continue }

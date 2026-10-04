@@ -328,3 +328,44 @@
 "Claude Code, Codex, Antigravity ve eski Gemini CLI oturumlarının yerel token kayıtları otomatik aktarılır." = "Local token records from Claude Code, Codex, Antigravity and legacy Gemini CLI sessions are imported automatically.";
 "Tokenlar sağlayıcılar arasında aynı kota veya maliyet anlamına gelmez. Önbellek okuması ayrıca gösterilir; Claude ve Antigravity’nin ayrı önbellek okuma sayaçları toplamın dışında tutulur." = "Token counts do not represent the same quota or cost across providers. Cache reads are shown separately; separate Claude and Antigravity cache-read counters are excluded from the total.";
 "Antigravity toplamı çağrı kayıtlarından hesaplanır; reasoning çıktı içinde sayılır. Proje, oturumun çalışma dizinine göre belirlenir. Kota grubu ile model eşlemesi doğrulanmadığından kota payı tahmini gösterilmez." = "Antigravity totals come from generation records; output includes reasoning. Projects use the session workspace. Estimated quota attribution is omitted because quota-bucket to model mapping is unverified.";
+
+"Girişini tamamla, ardından resmi kullanım ekranını aç." = "Complete sign-in, then open the official usage screen.";
+"%@ hesabını bağla · Kenar" = "Connect %@ account · Kenar";
+"%@ girişi" = "%@ sign-in";
+"Hesap bağlantısı kapalı." = "Account disconnected.";
+"Ayarlardan hesabını bağla." = "Connect your account in Settings.";
+"Ayarlardan Cursor hesabını bağla." = "Connect your Cursor account in Settings.";
+"Ayarlardan OpenAI hesabını bağla." = "Connect your OpenAI account in Settings.";
+"Ayarlardan Claude hesabını bağla." = "Connect your Claude account in Settings.";
+"Kullanım yüzdesi paylaşılmıyor." = "Usage percentage is not provided.";
+"Kullanım yüzdesi paylaşılmıyor. Codex / Work kotasından ayrıdır." = "Usage percentage is not provided. This is separate from Codex / Work.";
+"Kullanım yüzdesi paylaşılmıyor. Resmi kullanım ekranını bağlantı penceresinde aç." = "Usage percentage is not provided. Open the official usage screen in the connection window.";
+"Oturum sona erdi. Hesabını yeniden bağla." = "Session expired. Reconnect your account.";
+"Erişim doğrulaması gerekiyor. Hesap penceresini aç." = "Verification required. Open the account window.";
+"Sorgu sınırına ulaşıldı; sonraki yenilemede tekrar denenecek." = "Rate limited; retrying on the next refresh.";
+"Hesaba bağlanılamadı. Ağ bağlantısını kontrol et." = "Could not connect. Check your network connection.";
+"Çalışma alanını Kenar ayarlarından seç." = "Select a workspace in Kenar Settings.";
+"ChatGPT sohbet kotası için OpenAI hesap bağlantısını kullan." = "Use the OpenAI account connection for ChatGPT Chat limits.";
+"Yerel agy aktarımı · CLI oturumu gerekir." = "Local agy bridge · Requires an active CLI session.";
+"Ayarlardan Gemini veya Antigravity hesabını bağla." = "Connect your Gemini or Antigravity account in Settings.";
+"Resmi kullanım ekranı" = "Official usage screen";
+"Kenar’a aktar" = "Read usage";
+"Bağla" = "Connect";
+"Yeniden bağla" = "Reconnect";
+"Bağlantıyı kes" = "Disconnect";
+"İsteğe bağlı yerel bağlantı" = "Optional local connection";
+"İsteğe bağlı CLI bağlantıları" = "Optional CLI connections";
+"Hesap bağlantısı" = "Account connection";
+"Bağlantı kapalı" = "Disconnected";
+"Codex / Work ve ChatGPT Chat ayrı gösterilir." = "Codex / Work and ChatGPT Chat are shown separately.";
+"Gemini ve Antigravity ayrı kota kaynaklarıdır. Girişten sonra resmi kullanım kartını aç ve Kenar’a aktar düğmesine bas." = "Gemini and Antigravity have separate quotas. After signing in, open the official usage card and click Read usage.";
+"agy aktarımı açık CLI gerektirir. Hesap bağlantıları ayrı çalışır; diğer uygulamalardaki oturumlar değiştirilmez." = "The agy bridge requires an active CLI. Account connections work separately; other apps’ sessions are unchanged.";
+"Hesap" = "Account";
+"Tüm hesaplar" = "All accounts";
+"Eski kayıtlar · Hesap bilinmiyor" = "Legacy records · Account unknown";
+"Hesap %@" = "Account %@";
+"Web kullanımı yerel proje tokenlarına eklenmez; bu ekran yalnızca bu Mac’teki oturum kayıtlarını gösterir." = "Web usage is not added to project tokens; this view only shows local session records on this Mac.";
+
+"Kenar bu kaynaktan sayısal kota okuyamadı. Resmi kullanım ekranını kontrol et." = "Kenar could not read numeric usage from this source. Check the official usage screen.";
+
+"Google web okuyucusu deneysel; giriş yapmak sayısal kota erişimini garanti etmez." = "The Google web reader is experimental; signing in does not guarantee numeric quota access.";
