@@ -1,5 +1,7 @@
 # Kenar
 
+<img src="assets/AppIcon-source.png" alt="Kenar’s black Liquid Glass edge-island icon" width="80">
+
 A native macOS usage monitor for **Claude, OpenAI, Cursor, and Google**. Kenar lives in a small, Dynamic Island–style glass panel attached to the left or right edge of your display.
 
 Built with SwiftUI and AppKit. Requires **macOS 13 or later** and supports both Apple Silicon and Intel Macs.
@@ -20,6 +22,12 @@ Built with SwiftUI and AppKit. Requires **macOS 13 or later** and supports both 
 - **Display and appearance controls.** Choose a monitor, left or right edge, light/dark/system appearance, width, surface opacity, accent color, and text size. The panel falls back to the main display when its selected monitor disconnects.
 - **English and Turkish.** Switch languages in Settings → Appearance → Language. The selection persists across restarts.
 - **A background companion.** No Dock icon, optional launch at login, automatic quota refresh every two minutes, and manual refresh or connection retry. Optional CLI bridges remain available; account connections have their own saved sessions.
+
+## Download
+
+**[Download Kenar 1.5.1 (.app ZIP)](https://github.com/brkcnr/kenar/releases/download/v1.5.1/Kenar-1.5.1-macOS-universal.zip)** · [Download DMG](https://github.com/brkcnr/kenar/releases/download/v1.5.1/Kenar-1.5.1.dmg) · [Release notes](https://github.com/brkcnr/kenar/releases/tag/v1.5.1)
+
+The ZIP contains `Kenar.app`. Extract it, quit an older running copy, move the app to Applications and launch it. Both downloads support Apple Silicon and Intel on macOS 13+. SHA-256 checksums and a Turkish installation guide are attached to the release.
 
 ## Build and install
 
@@ -50,7 +58,7 @@ In **Settings → Providers**, use **Connect / Reconnect / Disconnect** for each
 | Group | Quota scope | Source and current limitations |
 | --- | --- | --- |
 | Claude | Account/workspace windows shared by supported Claude surfaces | Kenar-owned web session; optional Code bridge/OAuth |
-| OpenAI | Codex / Work; ordinary ChatGPT Chat is separate | Web session reads agentic account usage. Chat is unknown unless an explicitly identified official Chat usage card reports it. Existing Codex OAuth remains optional. |
+| OpenAI | Codex / Work; ordinary ChatGPT Chat is separate | Owned web login, agentic quota refresh and session persistence after the 1.5.1 upgrade were verified with one account. Chat is unknown unless an explicitly identified official Chat usage card reports it. Existing Codex OAuth remains optional. |
 | Cursor | Explicitly reported Cursor Models and Other Models pools | Kenar-owned Cursor login, with defensive parsing and an official usage-card fallback. Legacy aggregate fields retain their original labels. Login, legacy numeric usage and restart persistence were verified with one account; named paid-plan pools still require live validation. |
 | Google | Gemini web and Antigravity are separate products | Each connection reads only a visible official quota card in its own Kenar window. This is an experimental web reader: it is **not a verified independent Antigravity quota API**. If sign-in or quota reading is unavailable, Kenar reports that limitation. |
 
@@ -103,6 +111,8 @@ All analytics are local. Kenar has no telemetry, crash reporting service, or thi
 See [SECURITY.md](SECURITY.md) for credential handling and endpoint limitations.
 
 ## Development and verification
+
+The committed `assets/AppIcon-source.png` is the actual generated icon artwork. `Scripts/MakeIcon.swift` creates the normal/Retina PNG renditions and validates the resulting `.icns` through macOS ImageIO during each build.
 
 No external Swift package dependencies are required. The scripts preserve the native SwiftPM output layout. Set `KENAR_SDK` to an installed SDK path when your toolchain needs an SDK override (for example, an older SDK if Command Line Tools lacks the new SwiftUI macro plugin). Run:
 

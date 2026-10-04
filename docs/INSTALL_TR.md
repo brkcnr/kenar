@@ -1,7 +1,7 @@
-# Kenar 1.5 — Hızlı kurulum
+# Kenar 1.5.1 — Hızlı kurulum
 
 1. Çalışan eski Kenar'ı adanın sağ tık menüsündeki **Quit Kenar / Kenar’dan çık** ile kapat.
-2. **Kenar-1.5.0.dmg** dosyasını aç, Kenar'ı **Applications** klasörüne taşı ve çalıştır.
+2. GitHub release içindeki **Kenar-1.5.1.dmg** dosyasını aç veya **Kenar-1.5.1-macOS-universal.zip** arşivini çıkar. İçindeki Kenar uygulamasını **Applications** klasörüne taşı ve çalıştır.
 3. Sağ veya sol kenardaki adanın üzerine gelerek paneli aç. Ayarlarındaki görünüm, dil ve mevcut Claude oturumu korunur.
 
 ## Hesapları bağlama
@@ -9,7 +9,7 @@
 **Settings → Providers / Ayarlar → Sağlayıcılar** bölümünde her hesap için **Connect / Reconnect / Disconnect** bulunur. Girişini Kenar'ın kendi penceresinde tamamla; şifreni başka bir yerde paylaşma. Gerekirse çalışma alanını seç. Hesap bağlantıları otomatik Keychain şifre isteği açmaz.
 
 - **Claude:** Mevcut web bağlantısı korunur. Hesabın ortak kullanım pencereleri tek gösterilir; Code, web ve Desktop için aynı kota tekrar yazılmaz. Code aktarımı ve OAuth isteğe bağlı alternatiflerdir.
-- **OpenAI:** Hesabını bağlayarak Codex / Work verisini oku. Normal ChatGPT Chat ayrı gösterilir; sağlayıcı sayısal kullanım vermiyorsa yüzde bilinmiyor olarak kalır. Mevcut Codex OAuth alternatifi yükseltmede korunur.
+- **OpenAI:** Hesabını bağlayarak Codex / Work verisini oku. Normal ChatGPT Chat ayrı gösterilir; sağlayıcı sayısal kullanım vermiyorsa yüzde bilinmiyor olarak kalır. Web oturumu, agentic kota ve 1.5.1 yükseltmesi sonrasında oturumun korunması bir gerçek hesapta doğrulandı. Mevcut Codex OAuth alternatifi kullanılabilir.
 - **Cursor:** Cursor hesabıyla giriş yap. Yanıtta açıkça belirtilen Cursor Models ve Other Models ayrı gösterilir; eski toplam alanları başka havuzlar diye yeniden adlandırılmaz. Web bağlantısı, mevcut toplam alanları ve yeniden açılışta oturumun korunması bir gerçek hesapta doğrulandı; ücretli planın yeni iki havuzu henüz canlı sınanmadı.
 - **Google:** Gemini ve Antigravity ayrı bağlantılardır. Google web okuyucusu deneysel; giriş yapmak sayısal kotaya erişildiği anlamına gelmez. Resmi kullanım kartını açıp **Read usage / Kenar’a aktar** kullan. Kart okunamıyorsa yüzde uydurulmaz. Bağımsız Antigravity sayısal hesap sorgusu henüz doğrulanmadı.
 
@@ -34,4 +34,6 @@ Bildirim iznini macOS'ta açabilirsin. Varsayılan eşikler yüzde 75, 90 ve 100
 
 Yerel veri: `~/Library/Application Support/Kenar/`. Geçmiş geçişi eski kayıtları korur; hesap bilinmeyen eski kayıtlar yeni hesaba atanmaz. Geçişten önce `analytics.pre-1.5.sqlite` biçiminde bir SQLite yedeği oluşturulur. Konuşma içerikleri kaydedilmez. Kota geçmişi 90 gün tutulur.
 
-Uygulama ad-hoc imzalıdır; Apple notarizasyonu yapılmadı. macOS engellerse Sistem Ayarları → Gizlilik ve Güvenlik bölümündeki uygulama bilgisini kontrol et. Kaynak kod **Kenar-source.zip**, İngilizce kapsam ve doğrulama notları README ve VALIDATION içindedir.
+Uygulama ad-hoc imzalıdır; Apple notarizasyonu yapılmadı. macOS engellerse Sistem Ayarları → Gizlilik ve Güvenlik bölümündeki uygulama bilgisini kontrol et. Kaynak kod GitHub release'in **Source code** arşivlerinde; İngilizce kapsam ve doğrulama notları README ve VALIDATION içindedir.
+
+İndirilen dosyaları kontrol etmek için ZIP, DMG ve rehberi aynı klasöre indir. Bu klasörde Terminal'den `shasum -a 256 -c SHA256SUMS.txt` komutunu çalıştır; her dosya için `OK` sonucu beklenir.

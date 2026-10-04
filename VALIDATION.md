@@ -1,6 +1,6 @@
 # Validation
 
-Version: **1.5.0**. Built on macOS using Swift 6.4, Xcode Command Line Tools and the macOS 26.5 SDK.
+Version: **1.5.1**, build **11**. Built on macOS using Swift 6.4, Xcode Command Line Tools and the macOS 26.5 SDK.
 
 ## Automated checks
 
@@ -23,6 +23,7 @@ The separate native application passed **75 scenarios with zero failures**, incl
 - The compressed DMG checksum passes verification; mounting through Finder has not been tested in this environment.
 - The README animation uses the actual SwiftUI components and clearly labeled sample data. The README displays it at 360 pixels wide.
 - Version 1.5 was installed and restarted. The existing Claude web session and optional Codex OAuth source returned measurements. The history migration retained legacy records and created its backup. Account identifiers and API bodies were excluded from diagnostics.
+- Version 1.5.1 was installed and restarted with the new icon. The existing owned OpenAI web session returned fresh Codex / Work measurements; ordinary Chat usage remained unknown. User settings were retained.
 
 ## Live coverage and remaining work
 
@@ -30,7 +31,7 @@ The separate native application passed **75 scenarios with zero failures**, incl
 | --- | --- | --- |
 | Claude web account | Existing owned session returned three quota windows before upgrade; preserved session returned measurements after 1.5 restart | Compare with official usage screen, enterprise SSO |
 | Codex OAuth alternative | Returned live agentic quota after restart | Ordinary ChatGPT Chat is deliberately separate |
-| OpenAI owned web session | Defensive account/workspace and usage readers implemented | User sign-in, actual workspace response and independent web comparison not yet verified |
+| OpenAI owned web session | User completed official login; agentic quota measurements returned via web-account. Selected workspace and session survived the 1.5.1 upgrade/restart. Settings explicitly show ordinary Chat usage as not provided. | Normal Chat numeric usage is unavailable for the tested account; non-default workspaces and enterprise accounts not tested |
 | Cursor owned web session | User completed official login after the subframe fix; owned-session API returned legacy Included usage / Auto / API meters. Official usage page showed activity consistent with the returned values. Restart retained the session and returned fresh web-account measurements. | Paid-plan named pools, non-zero usage changes and enterprise accounts not live-tested |
 | Gemini web | Experimental official usage-card reader | No independent numeric quota source has been verified; sign-in alone does not establish coverage |
 | Antigravity web | Experimental official usage-card reader | No independent numeric quota API or compatible web card has been verified |
@@ -38,8 +39,15 @@ The separate native application passed **75 scenarios with zero failures**, incl
 
 The Google web reader is **experimental**, not a completed independent numeric integration. Missing percentages are displayed as unknown. Normal ChatGPT Chat must not inherit Codex / Work percentages. Different product pools are never added together.
 
-Desktop access intermittently became locked during this run. OpenAI and Google account sign-ins and comparisons remain pending; inaccessible accounts are not marked live-verified. Other outstanding checks include notification banners, launch at login, physical monitor hot-plugging and multiple display scales. Apple notarization is not provided. Internal provider interfaces may change.
+Desktop access intermittently became locked during this run. Google account sign-ins and comparisons remain pending; inaccessible accounts are not marked live-verified. Other outstanding checks include notification banners, launch at login, physical monitor hot-plugging and multiple display scales. Apple notarization is not provided. Internal provider interfaces may change.
 
 ## Embedded sign-in compatibility
 
 The initial navigation policy rejected `about:blank` and `about:srcdoc`, which Turnstile requires in WebViews. These URLs are now allowed **only as subframes**; HTTPS challenge frames are also permitted. They are never accepted as top-level quota sources. The standard WebKit user agent and persistent cookie store remain intact; no CAPTCHA is solved automatically or bypassed. See [Cloudflare's WebView requirements](https://developers.cloudflare.com/turnstile/get-started/mobile-implementation/). The user completed Cursor login after this change; the official dashboard, fresh account measurements and persistence after restart were confirmed.
+
+## 1.5.1 icon and distribution
+
+- The black Liquid Glass edge-island icon was generated as a transparent PNG. The exact committed source is used for both the README preview and application artwork.
+- Normal/Retina icon renditions are generated at 16–1024 pixels. macOS ImageIO decoded all ten ICNS entries successfully. The small and large renditions were visually inspected on light and dark backgrounds.
+- The standard iconutil converter rejected a valid-sized iconset in this environment. The deterministic packer emits PNG-backed ICNS entries and verifies them with macOS's decoder; the complete icon family remains in the application bundle.
+- Release assets include the universal app ZIP, DMG, SHA-256 checksums and Turkish guide. The app remains ad-hoc signed and is not Apple-notarized.

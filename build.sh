@@ -5,12 +5,13 @@ APP_NAME="Kenar"
 DIST="${KENAR_DIST:-dist}"
 APP="$DIST/$APP_NAME.app"
 source Scripts/SwiftEnvironment.sh
+swift "${SWIFT_COMPILER_ARGS[@]}" Scripts/MakeIcon.swift assets/AppIcon-source.png .build/AppIcon.iconset .build/AppIcon.icns
 swift build "${SWIFT_PACKAGE_ARGS[@]}" --disable-sandbox --cache-path .build/cache -c release --triple arm64-apple-macosx
 swift build "${SWIFT_PACKAGE_ARGS[@]}" --disable-sandbox --cache-path .build/cache -c release --triple x86_64-apple-macosx
 mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
 lipo -create .build/arm64-apple-macosx/release/Kenar .build/x86_64-apple-macosx/release/Kenar -output "$APP/Contents/MacOS/Kenar"
 cp -R Sources/Kenar/Resources/. "$APP/Contents/Resources/"
-cp assets/AppIcon.icns "$APP/Contents/Resources/"
+cp .build/AppIcon.icns "$APP/Contents/Resources/AppIcon.icns"
 cp LICENSE UPSTREAM.md THIRD_PARTY_NOTICES.md "$APP/Contents/Resources/"
 cat > "$APP/Contents/Info.plist" <<'PLIST'
 <?xml version="1.0" encoding="UTF-8"?>
@@ -19,8 +20,8 @@ cat > "$APP/Contents/Info.plist" <<'PLIST'
 <key>CFBundleName</key><string>Kenar</string>
 <key>CFBundleDisplayName</key><string>Kenar</string>
 <key>CFBundleIdentifier</key><string>local.kenar.usage</string>
-<key>CFBundleVersion</key><string>10</string>
-<key>CFBundleShortVersionString</key><string>1.5.0</string>
+<key>CFBundleVersion</key><string>11</string>
+<key>CFBundleShortVersionString</key><string>1.5.1</string>
 <key>CFBundleExecutable</key><string>Kenar</string>
 <key>CFBundleIconFile</key><string>AppIcon</string>
 <key>CFBundleDevelopmentRegion</key><string>tr</string>
