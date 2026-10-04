@@ -10,7 +10,7 @@
 
 - **Claude:** Mevcut web bağlantısı korunur. Hesabın ortak kullanım pencereleri tek gösterilir; Code, web ve Desktop için aynı kota tekrar yazılmaz. Code aktarımı ve OAuth isteğe bağlı alternatiflerdir.
 - **OpenAI:** Hesabını bağlayarak Codex / Work verisini oku. Normal ChatGPT Chat ayrı gösterilir; sağlayıcı sayısal kullanım vermiyorsa yüzde bilinmiyor olarak kalır. Mevcut Codex OAuth alternatifi yükseltmede korunur.
-- **Cursor:** Cursor hesabıyla giriş yap. Yanıtta açıkça belirtilen Cursor Models ve Other Models ayrı gösterilir; eski toplam alanları başka havuzlar diye yeniden adlandırılmaz. Yeni web bağlantısı gerçek hesapta henüz doğrulanmadı.
+- **Cursor:** Cursor hesabıyla giriş yap. Yanıtta açıkça belirtilen Cursor Models ve Other Models ayrı gösterilir; eski toplam alanları başka havuzlar diye yeniden adlandırılmaz. Web bağlantısı, mevcut toplam alanları ve yeniden açılışta oturumun korunması bir gerçek hesapta doğrulandı; ücretli planın yeni iki havuzu henüz canlı sınanmadı.
 - **Google:** Gemini ve Antigravity ayrı bağlantılardır. Google web okuyucusu deneysel; giriş yapmak sayısal kotaya erişildiği anlamına gelmez. Resmi kullanım kartını açıp **Read usage / Kenar’a aktar** kullan. Kart okunamıyorsa yüzde uydurulmaz. Bağımsız Antigravity sayısal hesap sorgusu henüz doğrulanmadı.
 
 İsteğe bağlı Antigravity CLI alternatifi için açık `agy` oturumunda bir kez:
