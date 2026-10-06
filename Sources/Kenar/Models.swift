@@ -56,6 +56,15 @@ struct ProviderSnapshot: Identifiable {
         let usable = windows.filter { $0.issue == nil && ($0.measuredAt.map { Date().timeIntervalSince($0) <= 300 } ?? true) }
         return usable.filter { $0.usedPercent != nil }.max { ($0.usedPercent ?? 0) < ($1.usedPercent ?? 0) } ?? usable.first ?? windows.first
     }
+    /// The closed island represents the current session, never the most-used
+    /// weekly/model pool. Missing or unreadable session data stays unknown.
+    var compactSession: UsageWindow? {
+        windows.first { window in
+            (window.id == "Current session" || window.label == "Current session") &&
+            window.issue == nil &&
+            (window.measuredAt.map { Date().timeIntervalSince($0) <= 300 && $0.timeIntervalSinceNow <= 30 } ?? true)
+        }
+    }
     var isStale: Bool { !isDemo && (error != nil || (updatedAt.map { Date().timeIntervalSince($0) > 300 } ?? false)) }
     func hasActiveConnection(at now: Date = Date()) -> Bool {
         guard error == nil, windows.contains(where: { window in

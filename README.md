@@ -21,11 +21,12 @@ Built with SwiftUI and AppKit. Requires **macOS 13 or later** and supports both 
 - **Project analytics.** Import token counters from local Claude Code, Codex, and Antigravity sessions, plus legacy Gemini CLI records. Antigravity generation records provide actual input, output, and cache counters; context percentages are never treated as consumption. Group projects by Git root and filter by session, week, month, or all time. Estimated quota attribution is clearly labeled where supported; it is not shown for Antigravity because model-to-quota-bucket mapping is unverified.
 - **Display and appearance controls.** Choose a monitor, left or right edge, light/dark/system appearance, width, surface opacity, accent color, and text size. The panel falls back to the main display when its selected monitor disconnects.
 - **English and Turkish.** Switch languages in Settings → Appearance → Language. The selection persists across restarts.
+- **Session-only closed island.** Its percentage and ring show the current session, including 0%. Weekly and model-pool usage remains in the expanded panel and still triggers threshold alerts. If a provider has no readable session quota, the island shows an em dash instead of borrowing another pool’s percentage.
 - **A background companion.** No Dock icon, optional launch at login, automatic quota refresh every two minutes, and manual refresh or connection retry. Optional CLI bridges remain available; account connections have their own saved sessions.
 
 ## Download
 
-**[Download Kenar 1.5.1 (.app ZIP)](https://github.com/brkcnr/kenar/releases/download/v1.5.1/Kenar-1.5.1-macOS-universal.zip)** · [Download DMG](https://github.com/brkcnr/kenar/releases/download/v1.5.1/Kenar-1.5.1.dmg) · [Release notes](https://github.com/brkcnr/kenar/releases/tag/v1.5.1)
+**[Download Kenar 1.5.2 (.app ZIP)](https://github.com/brkcnr/kenar/releases/download/v1.5.2/Kenar-1.5.2-macOS-universal.zip)** · [Download DMG](https://github.com/brkcnr/kenar/releases/download/v1.5.2/Kenar-1.5.2.dmg) · [Release notes](https://github.com/brkcnr/kenar/releases/tag/v1.5.2)
 
 The ZIP contains `Kenar.app`. Extract it, quit an older running copy, move the app to Applications and launch it. Both downloads support Apple Silicon and Intel on macOS 13+. SHA-256 checksums and a Turkish installation guide are attached to the release.
 

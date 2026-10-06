@@ -624,6 +624,38 @@ final class KenarTests: XCTestCase {
         let merged=UsageStore.merging(failed,with:previous)
         XCTAssertEqual(merged.primary?.usedPercent,42);XCTAssertEqual(merged.updatedAt,previous.updatedAt);XCTAssertTrue(merged.isStale)
     }
+    func testCompactIslandZeroSessionDoesNotUseWeeklyQuota() {
+        let windows = CodexProvider.parseUsage(data(#"{"rate_limit":{"primary_window":{"used_percent":0},"secondary_window":{"used_percent":24}}}"#))
+        let codex = ProviderSnapshot(id: "codex", name: "OpenAI", systemImage: "circle", windows: windows)
+        XCTAssertEqual(codex.compactSession?.usedPercent, 0)
+        XCTAssertEqual(codex.primary?.usedPercent, 24)
+        XCTAssertEqual(codex.windows.count, 2)
+
+        let claude = ProviderSnapshot(id: "claude", name: "Claude", systemImage: "circle",
+            windows: ClaudeProvider.parseUsage(data(#"{"five_hour":{"utilization":0},"seven_day":{"utilization":100}}"#)))
+        XCTAssertEqual(claude.compactSession?.usedPercent, 0)
+        XCTAssertEqual(claude.primary?.usedPercent, 100)
+        var ledger = NotificationLedger()
+        let weekly = claude.windows[1]
+        XCTAssertEqual(ledger.observe(key: weekly.identity(provider: claude.id), used: weekly.usedPercent!, reset: nil, thresholds: [75,90,100]).crossed, [75,90,100])
+        XCTAssertTrue(ledger.observe(key: weekly.identity(provider: claude.id), used: weekly.usedPercent!, reset: nil, thresholds: [75,90,100]).crossed.isEmpty)
+    }
+    func testCompactIslandMissingOrUnreadableSessionDoesNotFallBack() {
+        var snap = ProviderSnapshot(id: "codex", name: "OpenAI", systemImage: "circle",
+            windows: [UsageWindow(label: "Weekly", usedPercent: 90, resetsAt: nil)])
+        XCTAssertNil(snap.compactSession)
+        var session = UsageWindow(label: "Current session", usedPercent: nil, resetsAt: nil)
+        snap.windows.insert(session, at: 0)
+        XCTAssertNil(snap.compactSession?.usedPercent)
+        session.usedPercent = 0; session.issue = "Unavailable"; snap.windows[0] = session
+        XCTAssertNil(snap.compactSession)
+        session.issue = nil; session.measuredAt = Date().addingTimeInterval(-301); snap.windows[0] = session
+        XCTAssertNil(snap.compactSession)
+        session.measuredAt = Date().addingTimeInterval(60); snap.windows[0] = session
+        XCTAssertNil(snap.compactSession)
+        session.measuredAt = Date(); snap.windows[0] = session
+        XCTAssertEqual(snap.compactSession?.usedPercent, 0)
+    }
     @MainActor func testCompactIslandOnlyShowsConnectedProviders() {
         let now=Date()
         let store=UsageStore(providers:[],analytics:nil)

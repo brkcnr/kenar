@@ -1,10 +1,10 @@
 # Validation
 
-Version: **1.5.1**, build **11**. Built on macOS using Swift 6.4, Xcode Command Line Tools and the macOS 26.5 SDK.
+Version: **1.5.2**, build **12**. Built on macOS using Swift 6.4, Xcode Command Line Tools and the macOS 26.5 SDK.
 
 ## Automated checks
 
-The standalone runner passes **74 scenarios**. Coverage includes:
+The standalone runner passes **76 scenarios**. Coverage includes:
 
 - Provider parsing, missing/invalid percentages, unlimited plans, new model labels and reset timestamps.
 - Account, workspace, product and pool identity separation; explicit Cursor Models / Other Models parsing; unknown values remaining unknown.
@@ -15,7 +15,7 @@ The standalone runner passes **74 scenarios**. Coverage includes:
 - Threshold notification deduplication, quota periods, retention and reset separation.
 - Existing Claude, Codex and Antigravity bridges, credential recovery, local project imports, privacy filtering, geometry, language and preferences.
 
-The separate native application passed **75 scenarios with zero failures**, including the WebKit DOM fixture: quota cards must exclude conversation and marketing percentages. This check requires the normal desktop WebKit environment; the restricted shell cannot load its page. The native result was confirmed both in `.build/native-tests.log` and the application’s result window.
+Before the 1.5.2 presentation change, the separate native application passed **75 scenarios with zero failures**, including the WebKit DOM fixture: quota cards must exclude conversation and marketing percentages. This check requires the normal desktop WebKit environment; the restricted shell cannot load its page. The native result was confirmed both in `.build/native-tests.log` and the application’s result window.
 
 ## Build and package
 
@@ -52,3 +52,10 @@ The initial navigation policy rejected `about:blank` and `about:srcdoc`, which T
 - The standard iconutil converter rejected a valid-sized iconset in this environment. The deterministic packer emits PNG-backed ICNS entries and verifies them with macOS's decoder; the complete icon family remains in the application bundle.
 - Release assets include the universal app ZIP, DMG, SHA-256 checksums and Turkish guide. The app remains ad-hoc signed and is not Apple-notarized.
 - The public `v1.5.1` release was published and all four assets were downloaded again from GitHub. All three listed SHA-256 checksums matched. The downloaded app retained version 1.5.1 / build 11, both architectures, a valid ad-hoc signature and the committed icon; the downloaded DMG passed its integrity check.
+
+## 1.5.2 session-only island
+
+- The closed island uses only a readable Current session quota for its percentage, ring and threshold color. It does not fall back to weekly or model-pool usage. Missing session quotas remain unknown.
+- Regression checks cover Codex session 0% / weekly 24%, Claude session 0% / weekly 100%, absent/unknown/stale/failed session readings, and weekly threshold delivery/deduplication. All 76 standalone scenarios passed. Expanded quota details and notification observation still include every window.
+- The macOS 13+ universal binary and ad-hoc signature passed verification; the DMG integrity check passed.
+- Installed 1.5.2 retained account sessions and preferences. A live OpenAI web-account refresh returned distinct session and weekly values; the closed island displayed the session value. Cursor remained connected with an em dash because it has no current-session meter.

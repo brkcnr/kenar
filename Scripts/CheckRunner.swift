@@ -14,7 +14,7 @@ import AppKit
         let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 580, height: 120), styleMask: [.titled, .closable], backing: .buffered, defer: false)
         window.title = "Kenar native checks"
         window.isReleasedWhenClosed = false
-        let label = NSTextField(labelWithString: "Running 75 checks, including WebKit…")
+        let label = NSTextField(labelWithString: "Running 77 checks, including WebKit…")
         label.frame = NSRect(x: 20, y: 40, width: 540, height: 40)
         window.contentView?.addSubview(label); nativeWindow = window; nativeLabel = label
         window.center(); window.makeKeyAndOrderFront(nil)
@@ -75,6 +75,8 @@ import AppKit
         do { try suite.setUpWithError(); try suite.testFailedImportRollsBackCursorAndCanBeRetried(); try suite.tearDownWithError(); print("CHECK: testFailedImportRollsBackCursorAndCanBeRetried") } catch { CheckSupport.fail("testFailedImportRollsBackCursorAndCanBeRetried: \(error)") }
         do { try suite.setUpWithError(); suite.testIslandOutlineAttachesToChosenEdge(); try suite.tearDownWithError(); print("CHECK: testIslandOutlineAttachesToChosenEdge") } catch { CheckSupport.fail("testIslandOutlineAttachesToChosenEdge: \(error)") }
         do { try suite.setUpWithError(); try suite.testIslandWidthMigrationKeepsCustomSettings(); try suite.tearDownWithError(); print("CHECK: testIslandWidthMigrationKeepsCustomSettings") } catch { CheckSupport.fail("testIslandWidthMigrationKeepsCustomSettings: \(error)") }
+        do { try suite.setUpWithError(); suite.testCompactIslandZeroSessionDoesNotUseWeeklyQuota(); try suite.tearDownWithError(); print("CHECK: testCompactIslandZeroSessionDoesNotUseWeeklyQuota") } catch { CheckSupport.fail("testCompactIslandZeroSessionDoesNotUseWeeklyQuota: \(error)") }
+        do { try suite.setUpWithError(); suite.testCompactIslandMissingOrUnreadableSessionDoesNotFallBack(); try suite.tearDownWithError(); print("CHECK: testCompactIslandMissingOrUnreadableSessionDoesNotFallBack") } catch { CheckSupport.fail("testCompactIslandMissingOrUnreadableSessionDoesNotFallBack: \(error)") }
         do { try suite.setUpWithError(); suite.testCompactIslandOnlyShowsConnectedProviders(); try suite.tearDownWithError(); print("CHECK: testCompactIslandOnlyShowsConnectedProviders") } catch { CheckSupport.fail("testCompactIslandOnlyShowsConnectedProviders: \(error)") }
         do { try suite.setUpWithError(); suite.testCompactIslandTracksExpiryAndRecovery(); try suite.tearDownWithError(); print("CHECK: testCompactIslandTracksExpiryAndRecovery") } catch { CheckSupport.fail("testCompactIslandTracksExpiryAndRecovery: \(error)") }
         do { try suite.setUpWithError(); try suite.testLegacyVerticalEdgeMigrationKeepsPreferences(); try suite.tearDownWithError(); print("CHECK: testLegacyVerticalEdgeMigrationKeepsPreferences") } catch { CheckSupport.fail("testLegacyVerticalEdgeMigrationKeepsPreferences: \(error)") }
@@ -106,8 +108,8 @@ import AppKit
         } else { print("NATIVE CHECK: WebKit DOM fixture requires the native check application; not run in the shell sandbox.") }
 
         do { try suite.setUpWithError(); try await suite.testProviderConnectionChangeDiscardsOnlyItsInflightQuota(); try suite.tearDownWithError(); print("CHECK: testProviderConnectionChangeDiscardsOnlyItsInflightQuota") } catch { CheckSupport.fail("testProviderConnectionChangeDiscardsOnlyItsInflightQuota: \(error)") }
-        print("\(CheckSupport.failures == 0 ? "PASS" : "FAIL"): \(native ? 75 : 74) scenarios, \(CheckSupport.failures) failures")
-        if native { nativeLabel?.stringValue = "\(CheckSupport.failures == 0 ? "PASS" : "FAIL"): 75 scenarios, \(CheckSupport.failures) failures" }
+        print("\(CheckSupport.failures == 0 ? "PASS" : "FAIL"): \(native ? 77 : 76) scenarios, \(CheckSupport.failures) failures")
+        if native { nativeLabel?.stringValue = "\(CheckSupport.failures == 0 ? "PASS" : "FAIL"): 77 scenarios, \(CheckSupport.failures) failures" }
         else { exit(CheckSupport.failures == 0 ? 0 : 1) }
     }
 }

@@ -1,7 +1,7 @@
-# Kenar 1.5.1 — Hızlı kurulum
+# Kenar 1.5.2 — Hızlı kurulum
 
 1. Çalışan eski Kenar'ı adanın sağ tık menüsündeki **Quit Kenar / Kenar’dan çık** ile kapat.
-2. GitHub release içindeki **Kenar-1.5.1.dmg** dosyasını aç veya **Kenar-1.5.1-macOS-universal.zip** arşivini çıkar. İçindeki Kenar uygulamasını **Applications** klasörüne taşı ve çalıştır.
+2. GitHub release içindeki **Kenar-1.5.2.dmg** dosyasını aç veya **Kenar-1.5.2-macOS-universal.zip** arşivini çıkar. İçindeki Kenar uygulamasını **Applications** klasörüne taşı ve çalıştır.
 3. Sağ veya sol kenardaki adanın üzerine gelerek paneli aç. Ayarlarındaki görünüm, dil ve mevcut Claude oturumu korunur.
 
 ## Hesapları bağlama
@@ -24,7 +24,7 @@ Bu alternatif aktif CLI oturumu gerektirir; bağımsız Google hesap sorgusu de�
 
 ## Panel ve geçmiş
 
-Kapalı ada yalnızca okunabilir, güncel verisi olan grupları gösterir. Açık panel tüm grupları ve bağlantı durumlarını gösterir. Ürünlerin yüzdeleri toplanmaz; ayrıntıları görmek için gruba tıkla. İğne paneli sabitler. Ayarlardan monitör, kenar, tema, genişlik, saydamlık ve dil seçilir. İngilizce için **Appearance → Language → English** kullan.
+Kapalı ada yalnızca okunabilir, güncel verisi olan grupları gösterir. Yüzde ve halka yalnızca mevcut session / oturum kotasını gösterir; oturum yüzde sıfırsa adada da sıfır görünür. Oturum kotası paylaşılmıyorsa yüzde yerine “—” kalır. Haftalık ve model havuzları açık panelde görünür ve eşik bildirimleri çalışmaya devam eder. Açık panel tüm grupları ve bağlantı durumlarını gösterir. Ürünlerin yüzdeleri toplanmaz; ayrıntıları görmek için gruba tıkla. İğne paneli sabitler. Ayarlardan monitör, kenar, tema, genişlik, saydamlık ve dil seçilir. İngilizce için **Appearance → Language → English** kullan.
 
 Kotalar iki dakikada bir, elle ve uyanma sonrasında yenilenir. Hata olursa son başarılı değer zamanı ile korunur ve güncel olmadığı belirtilir. Bilinmeyen değer yüzde sıfır değildir.
 

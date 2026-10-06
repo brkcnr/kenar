@@ -62,18 +62,18 @@ struct PanelView: View {
             VStack(spacing: 3) {
                 ZStack {
                     Circle().stroke(.white.opacity(0.14),lineWidth: 1.5)
-                    if let percent = snap.primary?.usedPercent {
+                    if let percent = snap.compactSession?.usedPercent {
                         Circle().trim(from: 0,to: min(max(percent/100,0),1))
-                            .stroke(indicatorColor(snap),style: StrokeStyle(lineWidth: 1.5,lineCap: .round))
+                            .stroke(indicatorColor(snap, window: snap.compactSession),style: StrokeStyle(lineWidth: 1.5,lineCap: .round))
                             .rotationEffect(.degrees(-90))
                     }
                     ProviderGlyph(id: snap.id,size: 13)
                 }.frame(width: 24,height: 24)
-                Text(value(snap)).font(.system(size: 9,weight: .medium)).monospacedDigit()
+                Text(value(snap.compactSession)).font(.system(size: 9,weight: .medium)).monospacedDigit()
                     .foregroundStyle(snap.isStale ? .orange : .white.opacity(0.8))
             }.frame(width: 66,height: 42)
                 .accessibilityElement(children: .ignore)
-                .accessibilityLabel("\(snap.name), \(value(snap))\(snap.isStale ? L(", güncel değil") : "")\(Preview.isEnabled ? L(", örnek veri") : "")")
+                .accessibilityLabel("\(snap.name), \(value(snap.compactSession))\(snap.isStale ? L(", güncel değil") : "")\(Preview.isEnabled ? L(", örnek veri") : "")")
         }
         if Preview.isEnabled {
             Text(L("Örnek")).font(.system(size: 7)).foregroundStyle(.orange.opacity(0.85))
@@ -100,12 +100,12 @@ struct PanelView: View {
                         if state.selected == snap.id {
                             VStack(alignment: .leading,spacing: 10) {
                                 if snap.products.isEmpty {
-                                    ForEach(snap.windows) { window in metric(window,color: indicatorColor(snap)) }
+                                    ForEach(snap.windows) { window in metric(window,color: indicatorColor(snap, window: snap.primary)) }
                                 } else {
                                     ForEach(snap.products) { product in
                                         VStack(alignment: .leading, spacing: 8) {
                                             Text(product.title).font(.system(size: 10, weight: .semibold)).foregroundStyle(.secondary)
-                                            ForEach(snap.windows.filter { $0.scope?.product == product.id }) { window in metric(window,color: indicatorColor(snap)) }
+                                            ForEach(snap.windows.filter { $0.scope?.product == product.id }) { window in metric(window,color: indicatorColor(snap, window: snap.primary)) }
                                             if let message = product.message { Text(L(message)).font(.system(size: 10)).foregroundStyle(product.state == .failed || product.state == .expired ? .orange : .secondary) }
                                             if product.source == "agy-bridge" || product.source == "codex-oauth" { Text(L("İsteğe bağlı yerel bağlantı")).font(.system(size: 9)).foregroundStyle(.tertiary) }
                                         }
@@ -139,13 +139,13 @@ struct PanelView: View {
     private var collapseIcon: String {
         switch settings.values.edge { case .right: return "chevron.right"; case .left: return "chevron.left" }
     }
-    private func value(_ snap: ProviderSnapshot) -> String {
-        if snap.primary?.isUnlimited == true { return "∞" }
-        return snap.primary?.usedPercent.map { DisplayFormat.percent($0) } ?? "—"
+    private func value(_ window: UsageWindow?) -> String {
+        if window?.isUnlimited == true { return "∞" }
+        return window?.usedPercent.map { DisplayFormat.percent($0) } ?? "—"
     }
-    private func indicatorColor(_ snap: ProviderSnapshot) -> Color {
+    private func indicatorColor(_ snap: ProviderSnapshot, window: UsageWindow?) -> Color {
         if snap.isStale { return .orange }
-        if let percent = snap.primary?.usedPercent {
+        if let percent = window?.usedPercent {
             if percent >= 90 { return .red }
             if percent >= 75 { return .orange }
         }
@@ -159,11 +159,11 @@ struct PanelView: View {
                     HStack {
                         Text(snap.name).font(.system(size: settings.values.fontSize,weight: .medium))
                         Spacer(minLength: 8)
-                        Text(snap.primary?.isUnlimited == true ? L("Sınırsız") : value(snap)).font(.system(size: 12,weight: .medium)).monospacedDigit()
+                        Text(snap.primary?.isUnlimited == true ? L("Sınırsız") : value(snap.primary)).font(.system(size: 12,weight: .medium)).monospacedDigit()
                         Image(systemName: state.selected == snap.id ? "chevron.up" : "chevron.down").font(.system(size: 7,weight: .semibold)).foregroundStyle(.tertiary)
                     }
                     if let w = snap.primary,w.usedPercent != nil {
-                        ProgressBar(fraction: w.fraction,color: indicatorColor(snap),height: 3)
+                        ProgressBar(fraction: w.fraction,color: indicatorColor(snap, window: snap.primary),height: 3)
                         TimelineView(.periodic(from: .now,by: 1)) { tick in
                             Text(snap.isStale ? L("Güncel değil") : [w.productTitle, w.countdown(at: tick.date) ?? L("Yenilenme bilinmiyor")].compactMap { $0 }.joined(separator: " · "))
                                 .font(.system(size: 9)).foregroundStyle(snap.isStale ? .orange : .secondary).lineLimit(1)
@@ -174,7 +174,7 @@ struct PanelView: View {
                     }
                 }
             }.padding(.vertical,8).contentShape(Rectangle())
-        }.buttonStyle(.plain).accessibilityLabel(L("%@, %@; kota ayrıntıları",snap.name,value(snap)))
+        }.buttonStyle(.plain).accessibilityLabel(L("%@, %@; kota ayrıntıları",snap.name,value(snap.primary)))
     }
     private func metric(_ window: UsageWindow,color: Color) -> some View {
         VStack(alignment: .leading,spacing: 5) {

@@ -20,8 +20,8 @@ cat > "$APP/Contents/Info.plist" <<'PLIST'
 <key>CFBundleName</key><string>Kenar</string>
 <key>CFBundleDisplayName</key><string>Kenar</string>
 <key>CFBundleIdentifier</key><string>local.kenar.usage</string>
-<key>CFBundleVersion</key><string>11</string>
-<key>CFBundleShortVersionString</key><string>1.5.1</string>
+<key>CFBundleVersion</key><string>12</string>
+<key>CFBundleShortVersionString</key><string>1.5.2</string>
 <key>CFBundleExecutable</key><string>Kenar</string>
 <key>CFBundleIconFile</key><string>AppIcon</string>
 <key>CFBundleDevelopmentRegion</key><string>tr</string>
